@@ -1,6 +1,6 @@
 {
   "name": "easy-psql",
-  "version": "0.1.18",
+  "version": "0.1.23",
   "description": "Simple ORM for postgresql",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

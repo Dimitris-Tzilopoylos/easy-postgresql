@@ -13,6 +13,8 @@ const Relation = require("./relation");
 const Validation = require("./validation");
 const RawSQL = require("./raw");
 const Builder = require("./builder");
+const SQL = require("./sql");
+
 module.exports = {
   Column,
   CONSTANTS,
@@ -24,5 +26,6 @@ module.exports = {
   Relation,
   Validation,
   RawSQL,
-  builder: Builder,
+  Builder,
+  SQL,
 };

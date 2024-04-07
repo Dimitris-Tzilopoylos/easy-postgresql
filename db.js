@@ -19,6 +19,7 @@ const {
 const { Pool, types, Client } = require("pg");
 const Scheduler = require("./scheduler");
 const RawSQL = require("./raw");
+const SQL = require("./sql");
 types.setTypeParser(types.builtins.INT8, (x) => {
   return x && DB.isString(x) && x.length > 16 ? x : parseInt(x);
 });
@@ -715,7 +716,7 @@ class DB {
 
   buildUpdateSetOperation(columns, index = 0, isConflict, updatedColumns) {
     return Object.entries(columns).reduce(
-      (acc, [key, value], idx) => {
+      (acc, [key, value]) => {
         if (SELF_UPDATE_OPERATORS[key]) {
           if (!DB.isObject(value)) {
             throw new Error(
@@ -745,6 +746,20 @@ class DB {
             acc[0].push(`${key} = ${str}`);
             acc[1].push(...args);
           } else {
+            if (value instanceof SQL) {
+              const [str, qArgs, _] = value.__getSQL({
+                index: acc[1].length + 1 + index,
+                column: key,
+                alias: this.table,
+                args: acc[1],
+                binder: "",
+              });
+              if (str) {
+                acc[0].push(` ${key} = ${str} `);
+                acc[1].push(...qArgs);
+              }
+              return acc;
+            }
             acc[0].push(`${key} = $${acc[1].length + 1 + index}`);
             acc[1].push(value);
           }
@@ -775,6 +790,9 @@ class DB {
         ","
       )} ${whereStr} RETURNING *`;
       qArgs.push(...whereArgs);
+      if (DB.enableLog) {
+        console.log(sql, whereArgs);
+      }
       const result = await this.updateQueryExec(sql, qArgs);
       if (DB.eventExists(this.table, DB.EventNameSpaces.UPDATE)) {
         DB.executeEvent(this.table, DB.EventNameSpaces.UPDATE, result, this);
@@ -1193,6 +1211,17 @@ class DB {
             sql += ` ${WHERE_CLAUSE_OPERATORS[key]} ${str}`;
             index = idx;
             args.push(...qArgs);
+          } else if (config instanceof SQL) {
+            const [str, qArgs, idx] = config.__getSQL({
+              alias,
+              index,
+              args,
+              column: key,
+              binder,
+            });
+            sql += ` ${str} `;
+            args.push(...qArgs);
+            index = idx;
           } else {
             sql += ` ${WHERE_CLAUSE_OPERATORS[key]} $${index}`;
             args.push(config);
@@ -1228,6 +1257,26 @@ class DB {
           args.push(...gisArgs);
           isFirstEntry = false;
           continue;
+        } else if (config instanceof RawSQL) {
+          const [str, qArgs, idx] = config.__getFormattedSQL(index, alias);
+          sql += ` ${WHERE_CLAUSE_OPERATORS[key]} ${str}`;
+          index = idx;
+          args.push(...qArgs);
+          isFirstEntry = false;
+          continue;
+        } else if (config instanceof SQL) {
+          const [str, qArgs, idx] = config.__getSQL({
+            alias,
+            index,
+            args,
+            column: key,
+            binder,
+          });
+          sql += ` ${getFirstEntry(isFirstEntry, binder)} ${str} `;
+          args.push(...qArgs);
+          index = idx;
+          isFirstEntry = false;
+          continue;
         }
         sql += ` ${getFirstEntry(isFirstEntry, binder)} ${alias}.${
           model.columns[key].column
@@ -1243,6 +1292,33 @@ class DB {
         );
 
         sql += qStr;
+        args.push(...qArgs);
+        index = idx;
+      } else if (key === "_not") {
+        const [relationKey] = Object.keys(config);
+        const currentModel = DB.getRelatedModel(
+          DB.models[model.relations[relationKey].to_table].table
+        );
+        const relation = model.relations[relationKey];
+        const newAlias = this.makeDepthAlias(relation.alias, depth);
+        sql += ` ${getFirstEntry(isFirstEntry, binder)}  NOT EXISTS (SELECT ${
+          relation.to_column
+        } FROM ${DB.database}.${
+          currentModel.table
+        } ${newAlias} WHERE ${alias}.${relation.from_column} = ${newAlias}.${
+          relation.to_column
+        }`;
+        const [qString, qArgs, idx] = currentModel.makeWhereClause(
+          currentModel,
+          where[key][relationKey],
+          index,
+          newAlias,
+          false,
+          false,
+          binder,
+          depth + 1
+        );
+        sql += ` ${qString} )`;
         args.push(...qArgs);
         index = idx;
       } else if (model.relations[key]) {
@@ -1433,6 +1509,14 @@ class DB {
     const orderByStr = Object.entries(orderBy || {})
       .reduce((acc, [key, value]) => {
         if (!this.columns[key]) {
+          return acc;
+        }
+        if (value instanceof SQL) {
+          const [sql] = value.__getSQL({
+            column: key,
+            alias: alias || this.table,
+          });
+          acc.push(sql);
           return acc;
         }
         acc.push(
@@ -1645,7 +1729,7 @@ class DB {
       ? (replicas || []).filter(Boolean).map((replica) => new Pool(replica))
       : [];
     if (rest.schema) {
-      DB.registerDatabase(schema);
+      DB.registerDatabase(rest?.schema);
     }
   }
 

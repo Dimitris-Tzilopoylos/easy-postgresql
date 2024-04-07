@@ -36,9 +36,9 @@ declare class DB {
     ERROR: string;
   };
   static replicas: any[];
-  static replicationIndex: number = 0;
+  static replicationIndex: number;
   static pool: any;
-  static postgis: boolean = false;
+  static postgis: boolean;
   static client: any;
   static clientConnected: boolean;
   static brokerEvents: {};
@@ -122,7 +122,7 @@ declare class DB {
     isPromise?: boolean;
     log?: boolean;
   }): void;
-  static enablePOSTGIS(value?: boolean = true): void;
+  static enablePOSTGIS(value?: boolean): void;
   constructor(table?: string, connection?: any);
   table?: any;
   relations?: any;
@@ -133,7 +133,7 @@ declare class DB {
   transaction: boolean;
   database: any;
   driver: any;
-  connect(primary?: boolean = true): Promise<void>;
+  connect(primary?: boolean): Promise<void>;
   disconnect(): void;
   startTransaction(): Promise<void>;
   commit(): Promise<void>;
@@ -143,7 +143,7 @@ declare class DB {
   insertQueryExec(sql: any, args: any): Promise<any>;
   updateQueryExec(sql: any, args: any): Promise<any>;
   deleteQueryExec(sql: any, args: any): Promise<any>;
-  raw(sql: any, args?: any[], primary?: boolean = true): Promise<any>;
+  raw(sql: any, args?: any[], primary?: boolean): Promise<any>;
   findOne({
     where,
     include,

@@ -36,7 +36,7 @@ declare class Column {
     length?: any;
     defaultValue?: any;
     min?: any;
-    max: ?any;
+    max?: any;
     alias?: any;
     primary?: any;
     unique?: any;

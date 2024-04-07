@@ -48,7 +48,6 @@ export namespace WHERE_CLAUSE_OPERATORS {
   let _st_d_within: string;
   let _st_nintersects: string;
   let _st_ncontains: string;
-  let _st_nwithin: string;
   let _st_ncovers: string;
   let _st_noverlaps: string;
   let _st_ntouches: string;

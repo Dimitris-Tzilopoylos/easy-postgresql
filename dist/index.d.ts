@@ -8,6 +8,8 @@ import Model = require("./model");
 import Relation = require("./relation");
 import Validation = require("./validation");
 import RawSQL = require("./raw");
+import Builder = require("./builder");
+import SQL = require("./sql");
 export {
   Column,
   CONSTANTS,
@@ -19,4 +21,6 @@ export {
   Relation,
   Validation,
   RawSQL,
+  Builder,
+  SQL,
 };
