@@ -751,9 +751,9 @@ function desc_nulls_last(entry) {
   return `${entry} nulls last`;
 }
 
-function column(a, alias) {
+function column(a, alias, _as) {
   return {
-    sql: `${Builder.__mergeSQLPath(".")(alias, a)}`,
+    sql: `${Builder.__mergeSQLPath(".")(alias, a)}${_as ? ` as ${_as}` : ""}`,
     $builderColumnEntry: true,
   };
 }
@@ -995,6 +995,17 @@ class Statement extends BaseSQL {
     return this.builder.delete(table, schema);
   }
 }
+
+const query = new Query();
+console.log(
+  query
+    .select(query.builder.column("test", "test"))
+    .from("users")
+    .leftOuterJoin("users", "role_id")
+    .on("roles", "id")
+    .where(eq(column("id"), 2))
+    .definition()
+);
 
 module.exports = {
   Builder,

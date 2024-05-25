@@ -9,12 +9,14 @@ class Builder {
   }
   with(sql) {
     return {
-      as: this.__as(sql, false)
+      as: this.__as(sql, false),
     };
   }
   __as(previousSQL, isSequential = false, newSQL) {
-    return alias => {
-      const latestSQL = `${isSequential ? `${previousSQL},` : "with"}  ${alias} as (${isSequential ? newSQL : previousSQL}) `;
+    return (alias) => {
+      const latestSQL = `${
+        isSequential ? `${previousSQL},` : "with"
+      }  ${alias} as (${isSequential ? newSQL : previousSQL}) `;
       return {
         definition: this.__toSQL(latestSQL),
         raw: this.__raw(latestSQL),
@@ -22,14 +24,14 @@ class Builder {
         select: this.select.bind(this),
         delete: this.delete.bind(this),
         update: this.update.bind(this),
-        insert: this.insert.bind(this)
+        insert: this.insert.bind(this),
       };
     };
   }
   __nestedWith(previousSQL) {
-    return sql => {
+    return (sql) => {
       return {
-        as: this.__as(previousSQL, true, sql)
+        as: this.__as(previousSQL, true, sql),
       };
     };
   }
@@ -41,18 +43,20 @@ class Builder {
   }
   __select(columns) {
     return {
-      from: this.__from(columns, true)
+      from: this.__from(columns, true),
     };
   }
   __subSelect(columns) {
     return {
-      from: this.__from(columns, false, true)
+      from: this.__from(columns, false, true),
     };
   }
   __from(columns, canExecute = false) {
     return (table, alias, schema) => {
       const columnsStr = this.__makeColumns(columns, table, alias);
-      let sql = `select ${columnsStr} from ${schema ? schema + "." : ""}${table}${alias ? ` ${alias}` : ""}`;
+      let sql = `select ${columnsStr} from ${
+        schema ? schema + "." : ""
+      }${table}${alias ? ` ${alias}` : ""}`;
       return {
         leftJoin: this.__joinBuilder("left join", sql, canExecute),
         leftOuterJoin: this.__joinBuilder("left outer join", sql, canExecute),
@@ -64,24 +68,36 @@ class Builder {
         offset: this.__offset(sql, canExecute),
         where: this.__where(sql, schema, table, alias, canExecute),
         orderBy: this.__orderBy(sql, canExecute),
-        literal: this.__literal(sql, (sql, canExecute) => ({
-          leftJoin: this.__joinBuilder("left join", sql, canExecute),
-          leftOuterJoin: this.__joinBuilder("left outer join", sql, canExecute),
-          innerJoin: this.__joinBuilder("inner join", sql, canExecute),
-          rightJoin: this.__joinBuilder("right join", sql, canExecute),
-          rightOuterJoin: this.__joinBuilder("right outer join", sql, canExecute),
-          groupBy: this.__groupBy(sql, canExecute),
-          limit: this.__limit(sql, canExecute),
-          offset: this.__offset(sql, canExecute),
-          where: this.__where(sql, schema, table, alias, canExecute),
-          orderBy: this.__orderBy(sql, canExecute),
-          raw: this.__raw(sql)
-        }), canExecute),
+        literal: this.__literal(
+          sql,
+          (sql, canExecute) => ({
+            leftJoin: this.__joinBuilder("left join", sql, canExecute),
+            leftOuterJoin: this.__joinBuilder(
+              "left outer join",
+              sql,
+              canExecute
+            ),
+            innerJoin: this.__joinBuilder("inner join", sql, canExecute),
+            rightJoin: this.__joinBuilder("right join", sql, canExecute),
+            rightOuterJoin: this.__joinBuilder(
+              "right outer join",
+              sql,
+              canExecute
+            ),
+            groupBy: this.__groupBy(sql, canExecute),
+            limit: this.__limit(sql, canExecute),
+            offset: this.__offset(sql, canExecute),
+            where: this.__where(sql, schema, table, alias, canExecute),
+            orderBy: this.__orderBy(sql, canExecute),
+            raw: this.__raw(sql),
+          }),
+          canExecute
+        ),
         raw: this.__raw(sql),
         definition: this.__toSQL(sql),
         ...(canExecute && {
-          execute: this.__exec(sql)
-        })
+          execute: this.__exec(sql),
+        }),
       };
     };
   }
@@ -99,47 +115,105 @@ class Builder {
         toAlias = alias;
       return {
         on: (table, column, alias, schema) => {
-          const sql = `${previousSQL} ${this.__join(joinType, schema, table, column, alias, toSchema, toTable, toColumn, toAlias)}`;
+          const sql = `${previousSQL} ${this.__join(
+            joinType,
+            schema,
+            table,
+            column,
+            alias,
+            toSchema,
+            toTable,
+            toColumn,
+            toAlias
+          )}`;
           return {
             leftJoin: this.__joinBuilder("left join", sql, canExecute),
-            leftOuterJoin: this.__joinBuilder("left outer join", sql, canExecute),
+            leftOuterJoin: this.__joinBuilder(
+              "left outer join",
+              sql,
+              canExecute
+            ),
             innerJoin: this.__joinBuilder("inner join", sql, canExecute),
             rightJoin: this.__joinBuilder("right join", sql, canExecute),
-            rightOuterJoin: this.__joinBuilder("right outer join", sql, canExecute),
+            rightOuterJoin: this.__joinBuilder(
+              "right outer join",
+              sql,
+              canExecute
+            ),
             groupBy: this.__groupBy(sql, canExecute),
             limit: this.__limit(sql, canExecute),
             offset: this.__offset(sql, canExecute),
             where: this.__where(sql, schema, table, alias, canExecute),
             orderBy: this.__orderBy(sql, canExecute),
-            literal: this.__literal(sql, (sql, canExecute) => ({
-              leftJoin: this.__joinBuilder("left join", sql, canExecute),
-              leftOuterJoin: this.__joinBuilder("left outer join", sql, canExecute),
-              innerJoin: this.__joinBuilder("inner join", sql, canExecute),
-              rightJoin: this.__joinBuilder("right join", sql, canExecute),
-              rightOuterJoin: this.__joinBuilder("right outer join", sql, canExecute),
-              groupBy: this.__groupBy(sql, canExecute),
-              limit: this.__limit(sql, canExecute),
-              offset: this.__offset(sql, canExecute),
-              where: this.__where(sql, schema, table, alias, canExecute),
-              orderBy: this.__orderBy(sql, canExecute),
-              raw: this.__raw(sql)
-            }), canExecute),
+            literal: this.__literal(
+              sql,
+              (sql, canExecute) => ({
+                leftJoin: this.__joinBuilder("left join", sql, canExecute),
+                leftOuterJoin: this.__joinBuilder(
+                  "left outer join",
+                  sql,
+                  canExecute
+                ),
+                innerJoin: this.__joinBuilder("inner join", sql, canExecute),
+                rightJoin: this.__joinBuilder("right join", sql, canExecute),
+                rightOuterJoin: this.__joinBuilder(
+                  "right outer join",
+                  sql,
+                  canExecute
+                ),
+                groupBy: this.__groupBy(sql, canExecute),
+                limit: this.__limit(sql, canExecute),
+                offset: this.__offset(sql, canExecute),
+                where: this.__where(sql, schema, table, alias, canExecute),
+                orderBy: this.__orderBy(sql, canExecute),
+                raw: this.__raw(sql),
+              }),
+              canExecute
+            ),
             raw: this.__raw(sql),
             definition: this.__toSQL(sql),
             ...(canExecute && {
-              execute: this.__exec(sql)
-            })
+              execute: this.__exec(sql),
+            }),
           };
-        }
+        },
       };
     };
   }
-  __join(joinType, from_schema, from_table, from_column, from_alias, to_schema, to_table, to_column, to_alias, operator, extra) {
+  __join(
+    joinType,
+    from_schema,
+    from_table,
+    from_column,
+    from_alias,
+    to_schema,
+    to_table,
+    to_column,
+    to_alias,
+    operator,
+    extra
+  ) {
     const mergeFN = Builder.__mergeSQLPath(".");
-    return `${joinType || "inner join"} ${mergeFN(to_schema, to_table)}${to_alias ? ` ${to_alias}` : ""} on ${mergeFN(to_alias || to_table, Builder.isBuilderColumn(to_column) ? to_column.sql : to_column)} ${operator || "="} ${from_alias ? mergeFN(from_alias, Builder.isBuilderColumn(from_column) ? from_column.sql : from_column) : mergeFN(from_schema, from_table, Builder.isBuilderColumn(from_column) ? from_column.sql : from_column)}${extra ? ` ${extra}` : ""}`;
+    return `${joinType || "inner join"} ${mergeFN(to_schema, to_table)}${
+      to_alias ? ` ${to_alias}` : ""
+    } on ${mergeFN(
+      to_alias || to_table,
+      Builder.isBuilderColumn(to_column) ? to_column.sql : to_column
+    )} ${operator || "="} ${
+      from_alias
+        ? mergeFN(
+            from_alias,
+            Builder.isBuilderColumn(from_column) ? from_column.sql : from_column
+          )
+        : mergeFN(
+            from_schema,
+            from_table,
+            Builder.isBuilderColumn(from_column) ? from_column.sql : from_column
+          )
+    }${extra ? ` ${extra}` : ""}`;
   }
   __groupBy(previousSql, canExecute) {
-    return columns => {
+    return (columns) => {
       if (this.__columnsInputIsEligible(columns)) {
         const columnsStr = this.__makeColumns(columns, undefined, undefined);
         previousSql += ` group by ${columnsStr}`;
@@ -149,23 +223,27 @@ class Builder {
         limit: this.__limit(previousSql, canExecute),
         offset: this.__offset(previousSql, canExecute),
         orderBy: this.__orderBy(previousSql, canExecute),
-        literal: this.__literal(previousSql, (sql, canExecute) => ({
-          having: this.__having(sql, canExecute),
-          limit: this.__limit(sql, canExecute),
-          offset: this.__offset(sql, canExecute),
-          orderBy: this.__orderBy(sql, canExecute),
-          raw: this.__raw(sql)
-        }), canExecute),
+        literal: this.__literal(
+          previousSql,
+          (sql, canExecute) => ({
+            having: this.__having(sql, canExecute),
+            limit: this.__limit(sql, canExecute),
+            offset: this.__offset(sql, canExecute),
+            orderBy: this.__orderBy(sql, canExecute),
+            raw: this.__raw(sql),
+          }),
+          canExecute
+        ),
         definition: this.__toSQL(previousSql),
         raw: this.__raw(previousSql),
         ...(canExecute && {
-          execute: this.__exec(previousSql)
-        })
+          execute: this.__exec(previousSql),
+        }),
       };
     };
   }
   __limit(previousSQL, canExecute) {
-    return limit => {
+    return (limit) => {
       const formattedLimit = isNaN(limit) ? -1 : parseInt(limit);
       if (formattedLimit >= 0) {
         previousSQL += ` limit ?`;
@@ -174,19 +252,23 @@ class Builder {
       return {
         offset: this.__offset(previousSQL, canExecute),
         definition: this.__toSQL(previousSQL),
-        literal: this.__literal(previousSQL, (sql, canExecute) => ({
-          offset: this.__offset(sql, canExecute),
-          raw: this.__raw(sql)
-        }), canExecute),
+        literal: this.__literal(
+          previousSQL,
+          (sql, canExecute) => ({
+            offset: this.__offset(sql, canExecute),
+            raw: this.__raw(sql),
+          }),
+          canExecute
+        ),
         raw: this.__raw(previousSQL),
         ...(canExecute && {
-          execute: this.__exec(previousSQL)
-        })
+          execute: this.__exec(previousSQL),
+        }),
       };
     };
   }
   __offset(previousSQL, canExecute) {
-    return offset => {
+    return (offset) => {
       const formattedOffset = isNaN(offset) ? -1 : parseInt(offset);
       if (formattedOffset >= 0) {
         previousSQL += ` offset ?`;
@@ -194,14 +276,18 @@ class Builder {
       }
       return {
         definition: this.__toSQL(previousSQL),
-        literal: this.__literal(previousSQL, (sql, canExecute) => ({
-          offset: this.__offset(sql, canExecute),
-          raw: this.__raw(sql)
-        }), canExecute),
+        literal: this.__literal(
+          previousSQL,
+          (sql, canExecute) => ({
+            offset: this.__offset(sql, canExecute),
+            raw: this.__raw(sql),
+          }),
+          canExecute
+        ),
         raw: this.__raw(previousSQL),
         ...(canExecute && {
-          execute: this.__exec(previousSQL)
-        })
+          execute: this.__exec(previousSQL),
+        }),
       };
     };
   }
@@ -211,7 +297,10 @@ class Builder {
       if (conditions.length) {
         sql += " having ";
         for (let i = 0; i < conditions.length; i++) {
-          const [sqlPart, sqlArgs] = conditions[i](i === 0 ? "" : "and", i === 0);
+          const [sqlPart, sqlArgs] = conditions[i](
+            i === 0 ? "" : "and",
+            i === 0
+          );
           sql += ` ${sqlPart}`;
           this.args.push(...sqlArgs);
         }
@@ -222,15 +311,19 @@ class Builder {
         orderBy: this.__orderBy(sql, canExecute),
         limit: this.__limit(sql, canExecute),
         offset: this.__offset(sql, canExecute),
-        literal: this.__literal(previousSQL, (sql, canExecute) => ({
-          orderBy: this.__orderBy(sql, canExecute),
-          limit: this.__limit(sql, canExecute),
-          offset: this.__offset(sql, canExecute),
-          raw: this.__raw(sql)
-        }), canExecute),
+        literal: this.__literal(
+          previousSQL,
+          (sql, canExecute) => ({
+            orderBy: this.__orderBy(sql, canExecute),
+            limit: this.__limit(sql, canExecute),
+            offset: this.__offset(sql, canExecute),
+            raw: this.__raw(sql),
+          }),
+          canExecute
+        ),
         ...(canExecute && {
-          execute: this.__exec(previousSQL)
-        })
+          execute: this.__exec(previousSQL),
+        }),
       };
     };
   }
@@ -240,21 +333,25 @@ class Builder {
       if (!config?.length) {
         return {
           definition: this.__toSQL(sql),
-          literal: this.__literal(sql, (sql, canExecute) => ({
-            groupBy: this.__groupBy(sql, canExecute),
-            limit: this.__limit(sql, canExecute),
-            offset: this.__offset(sql, canExecute),
-            orderBy: this.__orderBy(sql, canExecute),
-            raw: this.__raw(sql)
-          }), canExecute),
+          literal: this.__literal(
+            sql,
+            (sql, canExecute) => ({
+              groupBy: this.__groupBy(sql, canExecute),
+              limit: this.__limit(sql, canExecute),
+              offset: this.__offset(sql, canExecute),
+              orderBy: this.__orderBy(sql, canExecute),
+              raw: this.__raw(sql),
+            }),
+            canExecute
+          ),
           ...(canExecute && {
-            execute: this.__exec(sql)
+            execute: this.__exec(sql),
           }),
           groupBy: this.__groupBy(sql, canExecute),
           limit: this.__limit(sql, canExecute),
           offset: this.__offset(sql, canExecute),
           orderBy: this.__orderBy(sql, canExecute),
-          raw: this.__raw(sql)
+          raw: this.__raw(sql),
         };
       }
       sql += ` where `;
@@ -265,21 +362,25 @@ class Builder {
       }
       return {
         definition: this.__toSQL(sql),
-        literal: this.__literal(sql, (sql, canExecute) => ({
-          groupBy: this.__groupBy(sql, canExecute),
-          limit: this.__limit(sql, canExecute),
-          offset: this.__offset(sql, canExecute),
-          orderBy: this.__orderBy(sql, canExecute),
-          raw: this.__raw(sql)
-        }), canExecute),
+        literal: this.__literal(
+          sql,
+          (sql, canExecute) => ({
+            groupBy: this.__groupBy(sql, canExecute),
+            limit: this.__limit(sql, canExecute),
+            offset: this.__offset(sql, canExecute),
+            orderBy: this.__orderBy(sql, canExecute),
+            raw: this.__raw(sql),
+          }),
+          canExecute
+        ),
         ...(canExecute && {
-          execute: this.__exec(sql)
+          execute: this.__exec(sql),
         }),
         groupBy: this.__groupBy(sql, canExecute),
         limit: this.__limit(sql, canExecute),
         offset: this.__offset(sql, canExecute),
         orderBy: this.__orderBy(sql, canExecute),
-        raw: this.__raw(sql)
+        raw: this.__raw(sql),
       };
     };
   }
@@ -291,9 +392,9 @@ class Builder {
           definition: this.__toSQL(sql),
           raw: this.__raw(sql),
           ...(canExecute && {
-            execute: this.__exec(sql)
+            execute: this.__exec(sql),
           }),
-          returning: this.__returning(sql)
+          returning: this.__returning(sql),
         };
       }
       sql += ` where `;
@@ -305,10 +406,10 @@ class Builder {
       return {
         definition: this.__toSQL(sql),
         ...(canExecute && {
-          execute: this.__exec(sql)
+          execute: this.__exec(sql),
         }),
         raw: this.__raw(sql),
-        returning: this.__returning(sql)
+        returning: this.__returning(sql),
       };
     };
   }
@@ -318,8 +419,8 @@ class Builder {
         return {
           raw: this.__raw(previousSQL),
           ...(canExecute && {
-            execute: this.__exec(previousSQL)
-          })
+            execute: this.__exec(previousSQL),
+          }),
         };
       }
       const sql = `${previousSQL} order by ${columns.join(",")}`;
@@ -327,8 +428,8 @@ class Builder {
         definition: this.__toSQL(sql),
         raw: this.__raw(sql),
         ...(canExecute && {
-          execute: this.__exec(sql)
-        })
+          execute: this.__exec(sql),
+        }),
       };
     };
   }
@@ -336,15 +437,15 @@ class Builder {
     const mergeFN = Builder.__mergeSQLPath(".");
     let sql = `insert into ${mergeFN(schema, table)}`;
     return {
-      values: this.__insert_values(sql)
+      values: this.__insert_values(sql),
     };
   }
   __insert_values(previousSQL) {
     return (...input) => {
-      const args = input.filter(x => ValidationService.isObject(x));
+      const args = input.filter((x) => ValidationService.isObject(x));
       if (!args.length) {
         return {
-          definition: this.__toSQL(previousSQL)
+          definition: this.__toSQL(previousSQL),
         };
       }
       const allKeys = {};
@@ -358,9 +459,11 @@ class Builder {
       }
       const allColumnsKeys = Object.keys(allKeys);
       let sql = `${previousSQL}(${Object.values(allKeys).join(",")}) values `;
-      const allSqlStrs = args.map(entry => {
+      const allSqlStrs = args.map((entry) => {
         this.args.push(...Object.values(entry));
-        return `(${allColumnsKeys.map(x => entry.hasOwnProperty(x) ? `?` : "default").join(",")})`;
+        return `(${allColumnsKeys
+          .map((x) => (entry.hasOwnProperty(x) ? `?` : "default"))
+          .join(",")})`;
       });
       sql += `${allSqlStrs.join(",")}`;
       return {
@@ -368,7 +471,7 @@ class Builder {
         onConflict: this.__onConflictInsert(sql),
         returning: this.__returning(sql),
         execute: this.__exec(sql),
-        definition: this.__toSQL(sql)
+        definition: this.__toSQL(sql),
       };
     };
   }
@@ -379,7 +482,7 @@ class Builder {
         return {
           returning: this.__returning(previousSQL),
           execute: this.__exec(previousSQL),
-          definition: this.__toSQL(previousSQL)
+          definition: this.__toSQL(previousSQL),
         };
       }
       const sql = `${previousSQL} on conflict (${constraintsSTR}) `;
@@ -387,7 +490,7 @@ class Builder {
         raw: this.__raw(sql),
         ignore: this.__ignoreInsert(sql),
         update: this.__updateInsert(sql),
-        definition: this.__toSQL(sql)
+        definition: this.__toSQL(sql),
       };
     };
   }
@@ -398,25 +501,27 @@ class Builder {
         raw: this.__raw(sql),
         returning: this.__returning(sql),
         execute: this.__exec(sql),
-        definition: this.__toSQL(sql)
+        definition: this.__toSQL(sql),
       };
     };
   }
   __updateInsert(previousSQL) {
-    return update => {
+    return (update) => {
       let sql = `${previousSQL} do update set `;
-      const sqlStr = Object.entries(update).map(([key, value]) => {
-        if (Builder.isConflictingColumn(value)) {
-          return `${key} = ${value.sql}`;
-        }
-        return `${key} = ?`;
-      }).join(", ");
+      const sqlStr = Object.entries(update)
+        .map(([key, value]) => {
+          if (Builder.isConflictingColumn(value)) {
+            return `${key} = ${value.sql}`;
+          }
+          return `${key} = ?`;
+        })
+        .join(", ");
       sql += sqlStr;
       return {
         raw: this.__raw(sql),
         returning: this.__returning(sql),
         execute: this.__exec(sql),
-        definition: this.__toSQL(sql)
+        definition: this.__toSQL(sql),
       };
     };
   }
@@ -427,7 +532,7 @@ class Builder {
       return {
         raw: this.__raw(sql),
         execute: this.__exec(sql),
-        definition: this.__toSQL(sql)
+        definition: this.__toSQL(sql),
       };
     };
   }
@@ -451,27 +556,35 @@ class Builder {
     const mergeFN = Builder.__mergeSQLPath(".");
     const sql = `update ${mergeFN(schema, table)}`;
     return {
-      set: this.__updateSet(sql)
+      set: this.__updateSet(sql),
     };
   }
   __updateSet(previousSQL) {
-    return input => {
+    return (input) => {
       if (!ValidationService.isObject(input) || !Object.keys(input).length) {
         throw new Error("update input not provided");
       }
-      const sqlParts = Object.entries(input).map(([key, value]) => {
-        if (Builder.isUpdateValueLiteral(value)) {
-          this.args.push(...value.args);
-          return `${key} = ${value.sql}`;
-        }
-        return `${key} = ?`;
-      }).join(", ");
+      const sqlParts = Object.entries(input)
+        .map(([key, value]) => {
+          if (Builder.isUpdateValueLiteral(value)) {
+            this.args.push(...value.args);
+            return `${key} = ${value.sql}`;
+          }
+          return `${key} = ?`;
+        })
+        .join(", ");
       let sql = `${previousSQL} set ${sqlParts}`;
       return {
         definition: this.__toSQL(sql),
         execute: this.__exec(sql),
         returning: this.__returning(sql),
-        where: this.__whereStatement(sql, undefined, undefined, undefined, true)
+        where: this.__whereStatement(
+          sql,
+          undefined,
+          undefined,
+          undefined,
+          true
+        ),
       };
     };
   }
@@ -480,7 +593,7 @@ class Builder {
     const sql = `delete from ${mergeFN(schema, table)}`;
     return {
       where: this.__whereStatement(sql, undefined, undefined, undefined, true),
-      returning: this.__returning(sql)
+      returning: this.__returning(sql),
     };
   }
   __toSQL(previousSQL) {
@@ -501,11 +614,18 @@ class Builder {
   }
   __makeColumns(columns, table, alias) {
     const formattedColumns = Array.isArray(columns) ? columns : [columns];
-    const allColumns = formattedColumns.map(x => Builder.isBuilderColumn(x) ? x.sql : x).filter(Boolean);
-    return allColumns.length ? allColumns.join(",") : `${alias ? alias + "." : table ? table + "." : ""}*`;
+    const allColumns = formattedColumns
+      .map((x) => (Builder.isBuilderColumn(x) ? x.sql : x))
+      .filter(Boolean);
+    return allColumns.length
+      ? allColumns.join(",")
+      : `${alias ? alias + "." : table ? table + "." : ""}*`;
   }
   __columnsInputIsEligible(columns) {
-    return Array.isArray(columns) && columns.length || !Array.isArray(columns) && !!columns;
+    return (
+      (Array.isArray(columns) && columns.length) ||
+      (!Array.isArray(columns) && !!columns)
+    );
   }
   static __mergeSQLPath(delimiter = ".") {
     return (...args) => {
@@ -525,18 +645,24 @@ class Builder {
     return val && val.$isUpdateLiteral;
   }
   static resolveColumnAndValues(...args) {
-    return args.reduce((acc, entry) => {
-      if (typeof entry === "object" && Builder.isBuilderColumn(entry)) {
-        acc[0].push(entry.sql);
-      } else if (typeof entry === "object" && Builder.isUpdateValueLiteral(entry)) {
-        acc[0].push(entry.sql);
-        acc[1].push(...entry.args);
-      } else {
-        acc[0].push("?");
-        acc[1].push(entry);
-      }
-      return acc;
-    }, [[], []]);
+    return args.reduce(
+      (acc, entry) => {
+        if (typeof entry === "object" && Builder.isBuilderColumn(entry)) {
+          acc[0].push(entry.sql);
+        } else if (
+          typeof entry === "object" &&
+          Builder.isUpdateValueLiteral(entry)
+        ) {
+          acc[0].push(entry.sql);
+          acc[1].push(...entry.args);
+        } else {
+          acc[0].push("?");
+          acc[1].push(entry);
+        }
+        return acc;
+      },
+      [[], []]
+    );
   }
 }
 function asc(entry) {
@@ -575,94 +701,114 @@ function desc_nulls_last(entry) {
   }
   return `${entry} nulls last`;
 }
-function column(a, alias) {
+function column(a, alias, _as) {
   return {
-    sql: `${Builder.__mergeSQLPath(".")(alias, a)}`,
-    $builderColumnEntry: true
+    sql: `${Builder.__mergeSQLPath(".")(alias, a)}${_as ? ` as ${_as}` : ""}`,
+    $builderColumnEntry: true,
   };
 }
 function excluded(a) {
   return {
     sql: `excluded.${a}`,
-    $isConflictingOperation: true
+    $isConflictingOperation: true,
   };
 }
 function latest(a) {
   return {
     sql: `new.${a}`,
-    $isConflictingOperation: true
+    $isConflictingOperation: true,
   };
 }
 function eq(a, b) {
-  return binder => {
+  return (binder) => {
     const [sql, args] = Builder.resolveColumnAndValues(a, b);
     return [` ${binder || ""} ${sql.join(" = ")}`, args];
   };
 }
 function neq(a, b) {
-  return binder => {
+  return (binder) => {
     const [sql, args] = Builder.resolveColumnAndValues(a, b);
     return [` ${binder || ""} ${sql.join(" <> ")}`, args];
   };
 }
 function lt(a, b) {
-  return binder => {
+  return (binder) => {
     const [sql, args] = Builder.resolveColumnAndValues(a, b);
     return [` ${binder || ""} ${sql.join(" < ")}`, args];
   };
 }
 function lte(a, b) {
-  return binder => {
+  return (binder) => {
     const [sql, args] = Builder.resolveColumnAndValues(a, b);
     return [` ${binder || ""} ${sql.join(" <= ")}`, args];
   };
 }
 function gt(a, b) {
-  return binder => {
+  return (binder) => {
     const [sql, args] = Builder.resolveColumnAndValues(a, b);
     return [` ${binder || ""} ${sql.join(" > ")}`, args];
   };
 }
 function gte(a, b) {
-  return binder => {
+  return (binder) => {
     const [sql, args] = Builder.resolveColumnAndValues(a, b);
     return [` ${binder || ""} ${sql.join(" >= ")}`, args];
   };
 }
 function isNull(a) {
-  return binder => {
+  return (binder) => {
     const [sql, args] = Builder.resolveColumnAndValues(a, null);
     return [` ${binder || ""} ${sql.join(" is ")}`, args];
   };
 }
 function isNotNull(a) {
-  return binder => {
+  return (binder) => {
     const [sql, args] = Builder.resolveColumnAndValues(a, null);
     return [` ${binder || ""} ${sql.join(" is not ")}`, args];
   };
 }
 function inArray(column, ...queryArgs) {
-  return binder => {
-    return [` ${binder || ""} ${Builder.isBuilderColumn(column) ? column.sql : column} in(?)`, queryArgs];
+  return (binder) => {
+    return [
+      ` ${binder || ""} ${
+        Builder.isBuilderColumn(column) ? column.sql : column
+      } in(?)`,
+      queryArgs,
+    ];
   };
 }
 function notInArray(column, ...queryArgs) {
-  return binder => {
-    return [` ${binder || ""} ${Builder.isBuilderColumn(column) ? column.sql : column} in(?)`, queryArgs];
+  return (binder) => {
+    return [
+      ` ${binder || ""} ${
+        Builder.isBuilderColumn(column) ? column.sql : column
+      } in(?)`,
+      queryArgs,
+    ];
   };
 }
 function inSelect(column, b) {
-  return binder => {
-    return [` ${binder || ""} ${Builder.isBuilderColumn(column) ? column.sql : column} in (${b})`, []];
+  return (binder) => {
+    return [
+      ` ${binder || ""} ${
+        Builder.isBuilderColumn(column) ? column.sql : column
+      } in (${b})`,
+      [],
+    ];
   };
 }
 function notInSelect(a, b) {
-  return binder => {
-    return [` ${binder || ""} ${Builder.isBuilderColumn(column) ? column.sql : column} not  in (${b})`, []];
+  return (binder) => {
+    return [
+      ` ${binder || ""} ${
+        Builder.isBuilderColumn(column) ? column.sql : column
+      } not  in (${b})`,
+      [],
+    ];
   };
 }
 function rawCondition(sql, args = []) {
-  return binder => {
+  return (binder) => {
     return [` ${binder || ""} ${sql || ""}`, Array.isArray(args) ? args : []];
   };
 }
@@ -706,7 +852,7 @@ function valueLiteral(sql, args = []) {
   return {
     $isUpdateLiteral: true,
     sql,
-    args: Array.isArray(args) ? args : [args]
+    args: Array.isArray(args) ? args : [args],
   };
 }
 Builder.prototype.valueLiteral = valueLiteral;
@@ -796,5 +942,5 @@ module.exports = {
   rawCondition,
   and,
   or,
-  valueLiteral
+  valueLiteral,
 };
