@@ -14,6 +14,7 @@ const Validation = require("./validation");
 const RawSQL = require("./raw");
 const Builder = require("./builder");
 const SQL = require("./sql");
+const Postgres = require("./auto-discover-api");
 
 module.exports = {
   Column,
@@ -28,4 +29,5 @@ module.exports = {
   RawSQL,
   Builder,
   SQL,
+  Postgres,
 };

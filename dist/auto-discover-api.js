@@ -1,3 +1,5 @@
+"use strict";
+
 const Column = require("./column");
 const DB = require("./db");
 const Model = require("./model");
@@ -11,7 +13,7 @@ class Postgres {
     connectionConfig,
     relations,
     options = {
-      createFiles: true,
+      createFiles: false,
       skipIfDirectoryExists: true,
       dirname: "easy-psql-models",
       useESM: false,
