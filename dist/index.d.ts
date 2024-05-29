@@ -10,6 +10,7 @@ import Validation = require("./validation");
 import RawSQL = require("./raw");
 import Builder = require("./builder");
 import SQL = require("./sql");
+import Postgres = require("./auto-discover-api");
 export {
   Column,
   CONSTANTS,
@@ -23,4 +24,5 @@ export {
   RawSQL,
   Builder,
   SQL,
+  Postgres,
 };
