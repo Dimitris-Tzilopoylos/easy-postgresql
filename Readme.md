@@ -435,3 +435,53 @@ DB.onErrorAsync("users", async (error, instance) => {
   // ...
 });
 ```
+
+## AutoDiscoverAPI
+
+```javascript
+const { Postgres, Relation } = require('easy-psql');
+
+const db = new Postgres({
+  connectionConfig: {
+    host: ...,
+    port: ...,
+    user: ...,
+    password: ...,
+    schema: ...,
+    database: ...
+  },
+  relations: [new Relation({...}), {from_table:...,from_column:...,to_table:...,to_column:...,alias:...,type: 'object' | 'array'}], // not required
+  options: {
+      createFiles: false, // create files for the models
+      skipIfDirectoryExists: true, // skip files' creation if the specified folder already exists
+      dirname: "easy-psql-models", // folder name to create model files
+      useESM: false, // true -> use exports / false -> require
+      extension: "js", // can be js,ts or mjs
+  }
+});
+
+const postgres = async () => {
+  await db.init()
+  return db
+}
+
+
+module.exports = postgres
+
+
+// e.g in another file
+
+const postgres = require('./path-of-the-file-above');
+
+const run = async () => {
+  const db = await postgres();
+
+  const data = await db.model('my-table').find({...}); //same api as the functions in the other examples
+
+  return data; // ([{...},{...}])
+}
+
+
+run();
+
+```
