@@ -12,7 +12,7 @@ const Model = require("./model");
 const Relation = require("./relation");
 const Validation = require("./validation");
 const RawSQL = require("./raw");
-const Builder = require("./builder");
+// const Builder = require("./builder");
 const SQL = require("./sql");
 const Postgres = require("./auto-discover-api");
 
@@ -27,7 +27,7 @@ module.exports = {
   Relation,
   Validation,
   RawSQL,
-  Builder,
+  // Builder,
   SQL,
   Postgres,
 };

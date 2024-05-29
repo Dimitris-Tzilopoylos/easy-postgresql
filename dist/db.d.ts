@@ -261,7 +261,7 @@ declare class DB {
     config: any,
     index: any,
     alias: any
-  );
+  ): any;
   mapGISOperation(
     key: any,
     column: any,
