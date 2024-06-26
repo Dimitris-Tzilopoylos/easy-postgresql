@@ -31,13 +31,14 @@ class Postgres {
     }
 
     const schemas = await loadTables(DB.connectionConfig);
-    const schema = schemas.find((x) => x.schema === DB.database);
+    // const schema = schemas.find((x) => x.schema === DB.database);
 
-    if (!schema) {
-      throw new Error(`Schema ${DB.database} was not found`);
+    // if (!schema) {
+    //   throw new Error(`Schema ${DB.database} was not found`);
+    // }
+    for (const { schema } of schemas) {
+      this.__makeModels(schema.tables, schema);
     }
-
-    this.__makeModels(schema.tables);
 
     if (this.options.createFiles) {
       await this.__makeModelFiles();
@@ -165,16 +166,16 @@ class Postgres {
     return this.options?.extension === "mjs";
   }
 
-  __makeModels(tables) {
+  __makeModels(tables, schema) {
     DB.models = {};
     DB.modelFactory = {};
     for (const table of tables || []) {
-      const model = this._makeModel(table, tables);
+      const model = this._makeModel(table, schema);
       DB.register(model);
     }
   }
 
-  _makeModel(config, tables) {
+  _makeModel(config, schema) {
     const { table, columns, foreignKeys } = config;
     const modelColumns = columns.reduce(
       (acc, col) => ({ ...acc, [col.name]: new Column(col) }),
@@ -189,6 +190,7 @@ class Postgres {
         to_table: fk.referenced_table,
         to_column: fk.referenced_column,
         type: "array",
+        schema,
       });
 
       return acc;
@@ -206,6 +208,7 @@ class Postgres {
             from_column: r.from_column,
             to_table: r.to_table,
             to_column: r.to_column,
+            schema: r?.schema || schema,
             type:
               ["object", "array"].indexOf(
                 typeof r?.type === "string" ? r?.type?.toLowerCase() : "array"
@@ -220,7 +223,7 @@ class Postgres {
 
     return class BaseModel extends Model {
       constructor(connection) {
-        super(table, connection);
+        super(table, connection, schema || "public");
       }
       columns = modelColumns;
 
@@ -230,10 +233,10 @@ class Postgres {
 
   // handlers
 
-  model(table, connection) {
-    const model = DB.modelFactory[table];
+  model(table, connection, schema = "public") {
+    const model = DB.modelFactory[schema][table];
     if (!model) {
-      throw new Error(`Model for table <${table}> was not found`);
+      throw new Error(`Model for table <${schema}.${table}> was not found`);
     }
     const instance = new model(connection);
     return {
@@ -246,6 +249,7 @@ class Postgres {
       update: instance.update.bind(instance),
       delete: instance.delete.bind(instance),
       withTransaction: instance.withTransaction.bind(instance),
+      aggregate: instance.aggregate.bind(this),
       instance,
     };
   }

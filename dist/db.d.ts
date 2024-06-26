@@ -56,7 +56,7 @@ declare class DB {
   static register(model: any): void;
   static registerDatabase(db: any): void;
   static registerConnectionConfig(connectionConfig?: any): void;
-  static getRelatedModel(table: any): any;
+  static getRelatedModel(relation: any): any;
   static getIsAggregate(alias: any): any;
   static getRelationNameWithoutAggregate(alias: any): any;
   static isObject(value: any): boolean;
@@ -123,7 +123,8 @@ declare class DB {
     log?: boolean;
   }): void;
   static enablePOSTGIS(value?: boolean): void;
-  constructor(table?: string, connection?: any);
+  constructor(table?: string, connection?: any, schema?: any);
+  schema?: any;
   table?: any;
   relations?: any;
   columns?: any;
@@ -152,6 +153,7 @@ declare class DB {
     orderBy,
     groupBy,
     distinct,
+    extras,
   }?: {
     where?: any;
     include?: any;
@@ -160,6 +162,7 @@ declare class DB {
     groupBy?: any;
     select?: any;
     distinct?: any;
+    extras?: { [key: string]: (x: string) => string };
   }): Promise<any>;
   find({
     where,
@@ -171,6 +174,7 @@ declare class DB {
     distinct,
     limit,
     offset,
+    extras,
   }?: {
     where?: any;
     include?: any;
@@ -181,6 +185,7 @@ declare class DB {
     distinct?: any;
     limit?: any;
     offset?: any;
+    extras?: { [key: string]: (x: string) => string };
   }): Promise<any>;
   insert(args: any): Promise<any>;
   createTX(args: any): Promise<any>;
@@ -301,7 +306,11 @@ declare class DB {
   makeColumnAlias(col: any): any;
   makeDepthAlias(alias: any, depth: any): string;
   splitRelationalAndModelColumnsInput(args: any, allowedEntries?: any[]): {}[];
-  getModelColumnsCommaSeperatedString(alias: any, select?: any): string;
+  getModelColumnsCommaSeperatedString(
+    alias: any,
+    select?: any,
+    extras?: { [key: string]: (x: string) => string }
+  ): string;
   get columnsStrNoAlias(): string;
   getRelatedModelByAlias(alias: any): any;
 }

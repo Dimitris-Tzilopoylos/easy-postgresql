@@ -21,6 +21,7 @@ declare class Postgres {
         to_column: string;
         type: "object" | "array";
         alias: string;
+        schema?: string;
       }>;
 
   options?: {
@@ -61,6 +62,7 @@ declare class Postgres {
           to_column: string;
           type: "object" | "array";
           alias: string;
+          schema?: string;
         }>;
     options?: {
       createFiles?: boolean;
@@ -85,6 +87,7 @@ declare class Postgres {
     createManyTX: Model["createManyTX"];
     update: Model["update"];
     delete: Model["delete"];
+    aggregate: Model["aggregate"];
     withTransaction: Model["withTransaction"];
     instance: typeof Model;
   };

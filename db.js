@@ -83,7 +83,7 @@ class DB {
     [EVENTS.ERROR]: {},
   };
 
-  constructor(table, connection = null) {
+  constructor(table, connection = null, schema = "public") {
     this.table = table;
     this.relations = {};
     this.columns = {};
@@ -93,6 +93,7 @@ class DB {
     this.transaction = false;
     this.database = DB.database;
     this.driver = null;
+    this.schema = schema;
   }
 
   static async connectClient() {
@@ -246,6 +247,7 @@ class DB {
     orderBy,
     groupBy,
     distinct,
+    extras,
   } = {}) {
     try {
       const [result] = await this.find({
@@ -257,6 +259,7 @@ class DB {
         distinct,
         select,
         limit: 1,
+        extras,
       });
       return result;
     } catch (error) {
@@ -274,6 +277,7 @@ class DB {
     select,
     limit,
     offset,
+    extras,
   } = {}) {
     try {
       let depth = 0;
@@ -282,7 +286,8 @@ class DB {
       const args = [];
       const modelColumnsStr = this.getModelColumnsCommaSeperatedString(
         alias,
-        select
+        select,
+        extras
       );
       const selectColumnsStr = [modelColumnsStr]
         .concat(
@@ -301,7 +306,7 @@ class DB {
               SELECT ${this.makeDistinctOn(
                 distinct,
                 alias
-              )} ${modelColumnsStr} FROM ${DB.database}.${this.table} ${alias}`;
+              )} ${modelColumnsStr} FROM ${this.schema}.${this.table} ${alias}`;
       const self = this;
 
       function makeQuery(model, relations, depth, prevAlias) {
@@ -319,7 +324,7 @@ class DB {
           if (!relation) {
             throw new Error("no such relation");
           }
-          const currentModel = DB.getRelatedModel(relation.to_table);
+          const currentModel = DB.getRelatedModel(relation);
           if (!currentModel) {
             throw new Error(`no such model for table ${relation.to_table}`);
           }
@@ -331,7 +336,8 @@ class DB {
           const modelColumnsStr =
             currentModel.getModelColumnsCommaSeperatedString(
               depthAlias,
-              config?.select
+              config?.select,
+              config?.extras
             );
           const { distinct, groupBy, orderBy, where, include, limit, offset } =
             DB.isObject(config) ? config : {};
@@ -366,7 +372,7 @@ class DB {
                 SELECT ${currentModel.makeDistinctOn(
                   distinct,
                   depthAlias
-                )} ${modelColumnsStr} FROM ${DB.database}.${
+                )} ${modelColumnsStr} FROM ${currentModel.schema}.${
               currentModel.table
             } ${depthAlias} `;
           }
@@ -508,7 +514,7 @@ class DB {
           if (!relation) {
             throw new Error("no such relation");
           }
-          const insertionModel = DB.getRelatedModel(relation.to_table);
+          const insertionModel = DB.getRelatedModel(relation);
           if (!insertionModel) {
             throw new Error("no such model");
           }
@@ -786,7 +792,7 @@ class DB {
         true,
         true
       );
-      const sql = `UPDATE ${DB.database}.${this.table} SET ${columns.join(
+      const sql = `UPDATE ${this.schema}.${this.table} SET ${columns.join(
         ","
       )} ${whereStr} RETURNING *`;
       qArgs.push(...whereArgs);
@@ -832,7 +838,7 @@ class DB {
         true,
         true
       );
-      const sql = `DELETE FROM ${DB.database}.${this.table} ${whereStr} RETURNING *`;
+      const sql = `DELETE FROM ${this.schema}.${this.table} ${whereStr} RETURNING *`;
       const result = await this.deleteQueryExec(sql, whereArgs);
       if (DB.eventExists(this.table, DB.EventNameSpaces.DELETE)) {
         DB.executeEvent(this.table, DB.EventNameSpaces.DELETE, result, this);
@@ -899,7 +905,7 @@ class DB {
       );
       const groupByStr = this.makeGroupBy(groupBy, this.table);
 
-      const sql = `SELECT json_build_object(${aggregations})  as ${this.table}_aggregate FROM ${DB.database}.${this.table}  ${whereStr} ${groupByStr}`;
+      const sql = `SELECT json_build_object(${aggregations})  as ${this.table}_aggregate FROM ${this.schema}.${this.table}  ${whereStr} ${groupByStr}`;
 
       return (await this.selectQueryExec(sql, whereArgs))?.[
         `${this.table}_aggregate`
@@ -954,12 +960,12 @@ class DB {
         );
         const groupByStr = this.makeGroupBy(groupBy, this.table);
         // const distinctStr = this.makeDistinctOn(distinct, this.table);
-        const sql = `SELECT json_build_object(${aggregations})  as ${relationAlias}_aggregate FROM ${DB.database}.${this.table} as ${alias}  ${whereStr} ${groupByStr}`;
+        const sql = `SELECT json_build_object(${aggregations})  as ${relationAlias}_aggregate FROM ${this.schema}.${this.table} as ${alias}  ${whereStr} ${groupByStr}`;
         return [sql, whereArgs, idx];
       }
       const groupByStr = this.makeGroupBy(groupBy, this.table);
       const distinctStr = this.makeDistinctOn(distinct, this.table);
-      const sql = `SELECT ${distinctStr} json_build_object(${aggregations})  as ${relationAlias}_aggregate FROM ${DB.database}.${this.table} as ${alias} ${groupByStr}`;
+      const sql = `SELECT ${distinctStr} json_build_object(${aggregations})  as ${relationAlias}_aggregate FROM ${this.schema}.${this.table} as ${alias} ${groupByStr}`;
       return [sql, "", index];
     } catch (error) {
       throw error;
@@ -1108,7 +1114,7 @@ class DB {
     }
     // const conflictingSql = !!ignore ? ' ON CONFLICT DO NOTHING ' : !!update && Array.isArray(update) && update.length > 0 ?   : ''
     return [
-      `INSERT INTO ${DB.database}.${this.table} (${columns.join(
+      `INSERT INTO ${this.schema}.${this.table} (${columns.join(
         ","
       )}) VALUES(${placeholders.join(",")}) ${conflictSql} RETURNING *`,
       qArgs,
@@ -1296,14 +1302,12 @@ class DB {
         index = idx;
       } else if (key === "_not") {
         const [relationKey] = Object.keys(config);
-        const currentModel = DB.getRelatedModel(
-          DB.models[model.relations[relationKey].to_table].table
-        );
         const relation = model.relations[relationKey];
+        const currentModel = DB.getRelatedModel(relation);
         const newAlias = this.makeDepthAlias(relation.alias, depth);
         sql += ` ${getFirstEntry(isFirstEntry, binder)}  NOT EXISTS (SELECT ${
           relation.to_column
-        } FROM ${DB.database}.${
+        } FROM ${currentModel?.schema || DB.database}.${
           currentModel.table
         } ${newAlias} WHERE ${alias}.${relation.from_column} = ${newAlias}.${
           relation.to_column
@@ -1322,18 +1326,16 @@ class DB {
         args.push(...qArgs);
         index = idx;
       } else if (model.relations[key]) {
-        const currentModel = DB.getRelatedModel(
-          DB.models[model.relations[key].to_table].table
-        );
         const relation = model.relations[key];
+        const currentModel = DB.getRelatedModel(relation);
         const newAlias = this.makeDepthAlias(relation.alias, depth);
         sql += ` ${getFirstEntry(isFirstEntry, binder)} ${alias}.${
           relation.from_column
-        } IN (SELECT ${relation.to_column} FROM ${DB.database}.${
-          currentModel.table
-        } ${newAlias} WHERE ${alias}.${relation.from_column} = ${newAlias}.${
-          relation.to_column
-        }`;
+        } IN (SELECT ${relation.to_column} FROM ${
+          relation?.schema || DB.database
+        }.${currentModel.table} ${newAlias} WHERE ${alias}.${
+          relation.from_column
+        } = ${newAlias}.${relation.to_column}`;
         const [qString, qArgs, idx] = currentModel.makeWhereClause(
           currentModel,
           where[key],
@@ -1565,7 +1567,7 @@ class DB {
       if (!relation) {
         return acc;
       }
-      const currModel = DB.getRelatedModel(relation.to_table);
+      const currModel = DB.getRelatedModel(relation);
       if (!currModel) {
         return acc;
       }
@@ -1598,7 +1600,7 @@ class DB {
     const { _count, ...rest } = aggrConfig;
 
     let queries = [];
-    const table = `${DB.database}.${this.table} `;
+    const table = `${this.schema}.${this.table} `;
     const whereClause = `${prevAlias}.${relation.from_column} = ${this.table}.${relation.to_column}`;
     if (_count) {
       queries.push(
@@ -1678,14 +1680,32 @@ class DB {
     );
   }
 
-  getModelColumnsCommaSeperatedString(alias, select) {
-    if (ValidationService.isObject(select)) {
-      const columns = Object.values(this.columns)
+  getModelColumnsCommaSeperatedString(alias, select, extras) {
+    if (DB.isObject(select)) {
+      let columns = Object.values(this.columns)
         .filter((c) => !!select[c.column])
         .map((c) => `${alias ? alias : this.table}.${c.column}`);
+      if (extras && DB.isObject(extras)) {
+        columns = columns.concat(
+          Object.values(extras)
+            .filter((x) => typeof x === "function")
+            .map((x) => x(alias || this.table))
+        );
+      }
       if (columns.length > 0) {
         return columns.join(",");
       }
+    }
+
+    if (extras && DB.isObject(extras)) {
+      return Object.values(this.columns)
+        .map((c) => `${alias ? alias : this.table}.${c.column}`)
+        .concat(
+          Object.values(extras)
+            .filter((x) => typeof x === "function")
+            .map((x) => x(alias || this.table))
+        )
+        .join(",");
     }
     return Object.values(this.columns)
       .map((c) => `${alias ? alias : this.table}.${c.column}`)
@@ -1700,11 +1720,15 @@ class DB {
 
   static register(model) {
     const invoked = new model();
-    DB.models[invoked.table] = new model();
-    DB.modelFactory[invoked.table] = model;
+    if (!DB.models[invoked.schema]) {
+      DB.models[invoked.schema] = {};
+      DB.modelFactory[invoked.schema] = {};
+    }
+    DB.models[invoked.schema][invoked.table] = new model();
+    DB.modelFactory[invoked.schema][invoked.table] = model;
     const aggModel = new model();
     aggModel.isAggregate = true;
-    DB.models[`${invoked.table}_aggregate`] = aggModel;
+    DB.models[invoked.schema][`${invoked.table}_aggregate`] = aggModel;
   }
 
   static registerDatabase(db) {
@@ -1733,8 +1757,8 @@ class DB {
     }
   }
 
-  static getRelatedModel(table) {
-    return DB.models[table];
+  static getRelatedModel(relation) {
+    return DB.models?.[relation?.schema || DB.database]?.[relation.to_table];
   }
 
   getRelatedModelByAlias(alias) {
