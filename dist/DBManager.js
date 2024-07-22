@@ -2,7 +2,7 @@
 
 const DB = require("./db");
 const prompt = require("prompt-sync")({
-  sigint: true
+  sigint: true,
 });
 class DBManager {
   static async createSchema(schemaName = DB.database) {
@@ -11,7 +11,7 @@ class DBManager {
     await DB.pool.query(up);
     return {
       up,
-      down
+      down,
     };
   }
   static async dropSchema(schemaName = DB.database) {
@@ -20,41 +20,51 @@ class DBManager {
     await DB.pool.query(up);
     return {
       up,
-      down
+      down,
     };
   }
   static async dropTable(model) {
-    const up = `DROP TABLE IF EXISTS ${DB.database}.${model.table} CASCADE;`;
-    const down = `CREATE TABLE IF NOT EXISTS ${DB.database}.${model.table} (
+    const up = `DROP TABLE IF EXISTS ${model?.schema || DB.database}.${
+      model.table
+    } CASCADE;`;
+    const down = `CREATE TABLE IF NOT EXISTS ${model?.schema || DB.database}.${
+      model.table
+    } (
             ${DBManager.modelColumnstoSql(model)}
         );`;
     await DB.pool.query(up);
     return {
       up,
-      down
+      down,
     };
   }
   static async createTable(model) {
-    const up = `CREATE TABLE IF NOT EXISTS ${DB.database}.${model.table} (
+    const up = `CREATE TABLE IF NOT EXISTS ${model?.schema || DB.database}.${
+      model.table
+    } (
             ${DBManager.modelColumnstoSql(model)}
         );`;
-    const down = `DROP TABLE IF EXISTS ${DB.database}.${model.table} CASCADE;`;
+    const down = `DROP TABLE IF EXISTS ${model?.schema || DB.database}.${
+      model.table
+    } CASCADE;`;
     await DB.pool.query(up);
     return {
       up,
-      down
+      down,
     };
   }
   static modelColumnstoSql(model) {
-    return Object.values(model.columns || {}).map(column => DBManager.modelColumnToSQL(column)).join(",\n");
+    return Object.values(model.columns || {})
+      .map((column) => DBManager.modelColumnToSQL(column))
+      .join(",\n");
   }
   static modelColumnToSQL(column) {
-    return `${column.column} ${column.type} ${column.columnConfig?.length ? `(${column.columnConfig?.length})` : ""} ${DBManager.modelColumnConstraints(column)}`;
+    return `${column.column} ${column.type} ${
+      column.columnConfig?.length ? `(${column.columnConfig?.length})` : ""
+    } ${DBManager.modelColumnConstraints(column)}`;
   }
   static modelColumnConstraints(column) {
-    const {
-      columnConfig
-    } = column;
+    const { columnConfig } = column;
     let sql = "";
     if (columnConfig.primary) {
       sql += ` PRIMARY KEY `;

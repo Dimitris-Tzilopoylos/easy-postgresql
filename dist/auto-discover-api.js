@@ -258,7 +258,7 @@ class Postgres {
     let connection;
     try {
       connection = await this.pool().connect();
-      const result = await cb(db);
+      const result = await cb(connection);
       if (result instanceof Error) {
         throw result;
       }

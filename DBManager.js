@@ -17,8 +17,12 @@ class DBManager {
   }
 
   static async dropTable(model) {
-    const up = `DROP TABLE IF EXISTS ${DB.database}.${model.table} CASCADE;`;
-    const down = `CREATE TABLE IF NOT EXISTS ${DB.database}.${model.table} (
+    const up = `DROP TABLE IF EXISTS ${model?.schema || DB.database}.${
+      model.table
+    } CASCADE;`;
+    const down = `CREATE TABLE IF NOT EXISTS ${model?.schema || DB.database}.${
+      model.table
+    } (
             ${DBManager.modelColumnstoSql(model)}
         );`;
     await DB.pool.query(up);
@@ -26,10 +30,14 @@ class DBManager {
   }
 
   static async createTable(model) {
-    const up = `CREATE TABLE IF NOT EXISTS ${DB.database}.${model.table} (
+    const up = `CREATE TABLE IF NOT EXISTS ${model?.schema || DB.database}.${
+      model.table
+    } (
             ${DBManager.modelColumnstoSql(model)}
         );`;
-    const down = `DROP TABLE IF EXISTS ${DB.database}.${model.table} CASCADE;`;
+    const down = `DROP TABLE IF EXISTS ${model?.schema || DB.database}.${
+      model.table
+    } CASCADE;`;
     await DB.pool.query(up);
     return { up, down };
   }
