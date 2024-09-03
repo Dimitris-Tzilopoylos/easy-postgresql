@@ -123,6 +123,7 @@ declare class DB {
     log?: boolean;
   }): void;
   static enablePOSTGIS(value?: boolean): void;
+  static getDriver(): any;
   constructor(table?: string, connection?: any, schema?: any);
   schema?: any;
   table?: any;
@@ -294,12 +295,14 @@ declare class DB {
     columnsMap,
     aggregationKey,
     aggrKeyConfig,
+    schema,
     table,
     whereClause,
   }: {
     columnsMap: any;
     aggregationKey: any;
     aggrKeyConfig: any;
+    schema: any;
     table: any;
     whereClause: any;
   }): string[];

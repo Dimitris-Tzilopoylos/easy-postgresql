@@ -4,7 +4,7 @@ const DB = require("./db");
 const ValidationService = require("./validation");
 class Model extends DB {
   constructor(table, connection = null, schema = "public") {
-    super(table, connection);
+    super(table, connection, schema);
     this.table = table;
     this.schema = schema;
     this.relations = {};

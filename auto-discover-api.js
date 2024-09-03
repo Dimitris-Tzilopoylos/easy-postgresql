@@ -34,8 +34,10 @@ class Postgres {
     // if (!schema) {
     //   throw new Error(`Schema ${DB.database} was not found`);
     // }
-    for (const { schema } of schemas) {
-      this.__makeModels(schema.tables);
+    DB.models = {};
+    DB.modelFactory = {};
+    for (const { schema, tables } of schemas) {
+      this.__makeModels(tables, schema);
     }
 
     if (this.options.createFiles) {
@@ -165,8 +167,6 @@ class Postgres {
   }
 
   __makeModels(tables, schema) {
-    DB.models = {};
-    DB.modelFactory = {};
     for (const table of tables || []) {
       const model = this._makeModel(table, schema);
       DB.register(model);

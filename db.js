@@ -20,6 +20,7 @@ const { Pool, types, Client } = require("pg");
 const Scheduler = require("./scheduler");
 const RawSQL = require("./raw");
 const SQL = require("./sql");
+const pg = require("pg");
 types.setTypeParser(types.builtins.INT8, (x) => {
   return x && DB.isString(x) && x.length > 16 ? x : parseInt(x);
 });
@@ -395,7 +396,10 @@ class DB {
           args.push(...qArgs);
           index = idx;
           const groupByStr = currentModel.makeGroupBy(groupBy, depthAlias);
-          const orderByStr = currentModel.makeOrderBy(orderBy, depthAlias);
+          const [orderByStr, orderByArgs, orderByIndx] =
+            currentModel.makeOrderBy(orderBy, index, depthAlias);
+          args.push(...orderByArgs);
+          index = orderByIndx;
           const [limitStr, limitArgs, idxLimit] = currentModel.makeLimit(
             limit,
             index
@@ -438,7 +442,13 @@ class DB {
       index = idx;
       args.push(...whereArgs);
       const groupByStr = this.makeGroupBy(groupBy, alias);
-      const orderByStr = this.makeOrderBy(orderBy, alias);
+      const [orderByStr, orderByArgs, orderByIndx] = this.makeOrderBy(
+        orderBy,
+        index,
+        alias
+      );
+      args.push(...orderByArgs);
+      index = orderByIndx;
       const [limitStr, limitArgs, idxLimit] = this.makeLimit(limit, index);
       index = idxLimit;
       args.push(...limitArgs);
@@ -1491,49 +1501,59 @@ class DB {
     if (!Array.isArray(groupBy) || !groupBy?.length) {
       return "";
     }
-
     const strFields = groupBy
-      .filter((col) => !!this.columns[col])
-      .map((col) => `${alias ? `${alias}.` : ""}${col}`)
-      .join(",");
-
-    if (!strFields.length) {
-      return "";
-    }
-
-    return `GROUP BY (${strFields})`;
-  }
-
-  makeOrderBy(orderBy, alias = "") {
-    if (!orderBy) {
-      return "";
-    }
-    const orderByStr = Object.entries(orderBy || {})
-      .reduce((acc, [key, value]) => {
-        if (!this.columns[key]) {
-          return acc;
-        }
-        if (value instanceof SQL) {
-          const [sql] = value.__getSQL({
-            column: key,
+      .reduce((acc, col) => {
+        if (!!this.columns[col]) {
+          acc.push(`${alias ? `${alias}.` : ""}${col}`);
+        } else if (col instanceof SQL) {
+          const [sql] = col.__getSQL({
             alias: alias || this.table,
           });
           acc.push(sql);
-          return acc;
         }
-        acc.push(
-          ` ${alias ? `${alias}.` : ""}${key}  ${
-            DB.allowedOrderDirectionsKeys[value] || "ASC"
-          }`
-        );
+        return acc;
+      }, [])
+      .join(",");
+    if (!strFields.length) {
+      return "";
+    }
+    return `GROUP BY ${strFields}`;
+  }
+
+  makeOrderBy(orderBy, index, alias = "") {
+    if (!orderBy) {
+      return ["", [], index];
+    }
+    const orderByArgs = [];
+    const orderByStr = Object.entries(orderBy || {})
+      .reduce((acc, [key, value]) => {
+        if (!!this.columns[key]) {
+          acc.push(
+            ` ${alias ? `${alias}.` : ""}${key}  ${
+              DB.allowedOrderDirectionsKeys[value] || "ASC"
+            }`
+          );
+        } else if (value instanceof SQL) {
+          const [sql, args, idx] = value.__getSQL({
+            column: key,
+            alias: alias || this.table,
+            index,
+          });
+          orderByArgs.push(...args);
+          index = idx;
+          acc.push(sql);
+        } else if (DB.getIsAggregate(key)) {
+          const sql = this.getAggregationForSorting({ [key]: value }, alias);
+          if (sql) {
+            acc.push(sql);
+          }
+        }
+
         return acc;
       }, [])
       .join(",");
 
-    return this.combineOrderBy(
-      orderByStr,
-      this.getAggregationForSorting(orderBy, alias)
-    );
+    return [orderByStr ? ` ORDER BY ${orderByStr} ` : "", orderByArgs, index];
   }
 
   makeLimit(limit, index) {
@@ -1618,6 +1638,7 @@ class DB {
         this.toOrderByByAggregationConfig({
           columnsMap: this.columns,
           aggregationKey: SupportedAggregations[key],
+          schema: this.schema,
           table,
           whereClause,
           aggrKeyConfig: value,
@@ -1632,6 +1653,7 @@ class DB {
     columnsMap,
     aggregationKey,
     aggrKeyConfig,
+    schema,
     table,
     whereClause,
   }) {
@@ -1639,14 +1661,14 @@ class DB {
       if (!columnsMap[column]) {
         throw { message: `Column ${column} doesn't exist`, status: 400 };
       }
-      return `(SELECT ${aggregationKey}(${column}) FROM ${table} WHERE ${whereClause}) ${
+      return `(SELECT ${aggregationKey}(${column}) FROM ${schema}.${table} WHERE ${whereClause}) ${
         DB.allowedOrderDirectionsKeys[aggrKeyConfig[column]] || "ASC"
       }`;
     });
   }
 
   makeColumnAlias(col) {
-    if (col?.name?.startsWith(this.table)) {
+    if (col?.name?.startsWith(`${this.table}.`)) {
       return col;
     }
 
@@ -1743,14 +1765,17 @@ class DB {
     if (DB.pool) {
       DB.pool.end();
     }
-    const { replicas, ...rest } = connectionConfig;
+    const { native, replicas, ...rest } = connectionConfig;
     DB.connectionConfig = {
       ...DB.connectionConfig,
       ...rest,
     };
-    DB.pool = new Pool(DB.connectionConfig);
+    const poolInstance = native ? pg.native.Pool : Pool;
+    DB.pool = new poolInstance(DB.connectionConfig);
     DB.replicas = Array.isArray(replicas)
-      ? (replicas || []).filter(Boolean).map((replica) => new Pool(replica))
+      ? (replicas || [])
+          .filter(Boolean)
+          .map((replica) => new poolInstance(replica))
       : [];
     if (rest.schema) {
       DB.registerDatabase(rest?.schema);
@@ -1979,6 +2004,9 @@ class DB {
 
   static runJob({ seconds = 0.001, execPath, isPromise = false, log = false }) {
     DB.scheduler.schedule({ exec: execPath, seconds, isPromise, log });
+  }
+  static getDriver() {
+    return pg;
   }
 }
 

@@ -22,6 +22,7 @@ const { IS_POSTGIS_OPERATOR } = require("../constants");
 const { POSTGIS_DISTANCE_COMPARISON_OPERATORS } = require("./constants");
 const ValidationService = require("./validation");
 const SQL = require("./sql");
+const pg = require("pg");
 types.setTypeParser(types.builtins.INT8, (x) => {
   return x && DB.isString(x) && x.length > 16 ? x : parseInt(x);
 });
@@ -367,7 +368,10 @@ class DB {
           args.push(...qArgs);
           index = idx;
           const groupByStr = currentModel.makeGroupBy(groupBy, depthAlias);
-          const orderByStr = currentModel.makeOrderBy(orderBy, depthAlias);
+          const [orderByStr, orderByArgs, orderByIndx] =
+            currentModel.makeOrderBy(orderBy, index, depthAlias);
+          args.push(...orderByArgs);
+          index = orderByIndx;
           const [limitStr, limitArgs, idxLimit] = currentModel.makeLimit(
             limit,
             index
@@ -382,17 +386,9 @@ class DB {
           index = idxOffset;
           if (!isAggregate) {
             sql += `
-            WHERE ${prevAlias}.${relation.from_column} = ${depthAlias}.${relation.to_column}
-            ${whereClauseStr}
-            ${groupByStr}
-            ${orderByStr}
-            ${limitStr}
-            ${offsetStr} ) ${depthAlias}  ${appendSql} ) ${depthAlias} ) AS ${depthAlias} ON true
-            `;
+            WHERE ${prevAlias}.${relation.from_column} = ${depthAlias}.${relation.to_column} ${whereClauseStr} ${groupByStr} ${orderByStr} ${limitStr} ${offsetStr} ) ${depthAlias}  ${appendSql} ) ${depthAlias} ) AS ${depthAlias} ON true `;
           } else {
-            sql += ` WHERE ${prevAlias}.${relation.from_column} = ${depthAlias}.${relation.to_column}
-            ${whereClauseStr}
-            ${groupByStr} )   AS ${depthAlias} ON true`;
+            sql += ` WHERE ${prevAlias}.${relation.from_column} = ${depthAlias}.${relation.to_column} ${whereClauseStr} ${groupByStr} )   AS ${depthAlias} ON true `;
           }
         }
         return sql;
@@ -408,20 +404,20 @@ class DB {
       index = idx;
       args.push(...whereArgs);
       const groupByStr = this.makeGroupBy(groupBy, alias);
-      const orderByStr = this.makeOrderBy(orderBy, alias);
+      const [orderByStr, orderByArgs, orderByIndx] = this.makeOrderBy(
+        orderBy,
+        index,
+        alias
+      );
+      args.push(...orderByArgs);
+      index = orderByIndx;
       const [limitStr, limitArgs, idxLimit] = this.makeLimit(limit, index);
       index = idxLimit;
       args.push(...limitArgs);
       const [offsetStr, offsetArgs, idxOffset] = this.makeOffset(offset, index);
       args.push(...offsetArgs);
       index = idxOffset;
-      sql += `
-      ${whereClauseStr}
-      ${groupByStr}
-      ${orderByStr}
-      ${limitStr}
-      ${offsetStr} ) ${alias}
-      `;
+      sql += ` ${whereClauseStr} ${groupByStr} ${orderByStr} ${limitStr} ${offsetStr} ) ${alias} `;
       sql += makeQuery(this, include, depth + 1, alias);
       sql += ` ) ${alias}`;
       if (DB.enableLog) {
@@ -1439,43 +1435,57 @@ class DB {
       return "";
     }
     const strFields = groupBy
-      .filter((col) => !!this.columns[col])
-      .map((col) => `${alias ? `${alias}.` : ""}${col}`)
+      .reduce((acc, col) => {
+        if (!!this.columns[col]) {
+          acc.push(`${alias ? `${alias}.` : ""}${col}`);
+        } else if (col instanceof SQL) {
+          const [sql] = col.__getSQL({
+            alias: alias || this.table,
+          });
+          acc.push(sql);
+        }
+        return acc;
+      }, [])
       .join(",");
     if (!strFields.length) {
       return "";
     }
-    return `GROUP BY (${strFields})`;
+    return `GROUP BY ${strFields}`;
   }
-  makeOrderBy(orderBy, alias = "") {
+  makeOrderBy(orderBy, index, alias = "") {
     if (!orderBy) {
-      return "";
+      return ["", [], index];
     }
+    const orderByArgs = [];
     const orderByStr = Object.entries(orderBy || {})
       .reduce((acc, [key, value]) => {
-        if (!this.columns[key]) {
-          return acc;
-        }
-        if (value instanceof SQL) {
-          const [sql] = value.__getSQL({
+        if (!!this.columns[key]) {
+          acc.push(
+            ` ${alias ? `${alias}.` : ""}${key}  ${
+              DB.allowedOrderDirectionsKeys[value] || "ASC"
+            }`
+          );
+        } else if (value instanceof SQL) {
+          const [sql, args, idx] = value.__getSQL({
             column: key,
             alias: alias || this.table,
+            index,
           });
+          orderByArgs.push(...args);
+          index = idx;
           acc.push(sql);
-          return acc;
+        } else if (DB.getIsAggregate(key)) {
+          const sql = this.getAggregationForSorting({ [key]: value }, alias);
+          if (sql) {
+            acc.push(sql);
+          }
         }
-        acc.push(
-          ` ${alias ? `${alias}.` : ""}${key}  ${
-            DB.allowedOrderDirectionsKeys[value] || "ASC"
-          }`
-        );
+
         return acc;
       }, [])
       .join(",");
-    return this.combineOrderBy(
-      orderByStr,
-      this.getAggregationForSorting(orderBy, alias)
-    );
+
+    return [orderByStr ? ` ORDER BY ${orderByStr} ` : "", orderByArgs, index];
   }
   makeLimit(limit, index) {
     if (DB.isNullOrUndefinedOrEmpty(limit)) {
@@ -1552,6 +1562,7 @@ class DB {
           columnsMap: this.columns,
           aggregationKey: SupportedAggregations[key],
           table,
+          schema: this.schema,
           whereClause,
           aggrKeyConfig: value,
         })
@@ -1563,6 +1574,7 @@ class DB {
     columnsMap,
     aggregationKey,
     aggrKeyConfig,
+    schema,
     table,
     whereClause,
   }) {
@@ -1573,13 +1585,13 @@ class DB {
           status: 400,
         };
       }
-      return `(SELECT ${aggregationKey}(${column}) FROM ${table} WHERE ${whereClause}) ${
+      return `(SELECT ${aggregationKey}(${column}) FROM ${schema}.${table} WHERE ${whereClause}) ${
         DB.allowedOrderDirectionsKeys[aggrKeyConfig[column]] || "ASC"
       }`;
     });
   }
   makeColumnAlias(col) {
-    if (col?.name?.startsWith(this.table)) {
+    if (col?.name?.startsWith(`${this.table}.`)) {
       return col;
     }
     return `${this.table}.${col.name}`;
@@ -1667,14 +1679,17 @@ class DB {
     if (DB.pool) {
       DB.pool.end();
     }
-    const { replicas, ...rest } = connectionConfig;
+    const { native, replicas, ...rest } = connectionConfig;
     DB.connectionConfig = {
       ...DB.connectionConfig,
       ...rest,
     };
-    DB.pool = new Pool(DB.connectionConfig);
+    const poolInstance = native ? pg.native.Pool : Pool;
+    DB.pool = new poolInstance(DB.connectionConfig);
     DB.replicas = Array.isArray(replicas)
-      ? (replicas || []).filter(Boolean).map((replica) => new Pool(replica))
+      ? (replicas || [])
+          .filter(Boolean)
+          .map((replica) => new poolInstance(replica))
       : [];
     if (rest.schema) {
       DB.registerDatabase(rest.schema);
@@ -1874,6 +1889,10 @@ class DB {
       isPromise,
       log,
     });
+  }
+
+  static getDriver() {
+    return pg;
   }
 }
 module.exports = DB;

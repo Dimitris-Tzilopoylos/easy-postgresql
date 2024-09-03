@@ -77,7 +77,8 @@ declare class Postgres {
   query(sql: string, args?: any[], connection?: any): Promise<any>;
   model(
     table: string,
-    connection?: any
+    connection?: any,
+    schema?: string
   ): {
     find: Model["find"];
     findOne: Model["findOne"];
