@@ -303,6 +303,32 @@ class DBManager {
       down,
     };
   }
+  static async addCheckConstraint(model, name, sql) {
+    const up = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} add constraint ${name} check (${sql});`;
+    const down = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} drop constraint ${name};`;
+    await DB.pool.query(up);
+    return {
+      up,
+      down,
+    };
+  }
+  static async dropCheckConstraint(model, name, sql) {
+    const down = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} add constraint ${name} check (${sql});`;
+    const up = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} drop constraint ${name};`;
+    await DB.pool.query(up);
+    return {
+      up,
+      down,
+    };
+  }
   static toModelSchemaTableAlias(model) {
     return `${model?.schema ? `"${model.schema}".` : ""}"${model.table}"`;
   }

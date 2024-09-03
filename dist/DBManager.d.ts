@@ -106,6 +106,22 @@ declare class DBManager {
     up: string;
     down: string;
   }>;
+  static addCheckConstraint(
+    model: any,
+    name: string,
+    sql: string
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
+  static dropCheckConstraint(
+    model: any,
+    name: string,
+    sql: string
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
   static toModelSchemaTableAlias(model: any): string;
   static formatConstraintOrIndexColumns(columns: any[]): any[];
   static toForeignKeyAction(type: any, value?: any);
