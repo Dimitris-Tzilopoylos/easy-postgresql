@@ -15,7 +15,7 @@ class Model extends DB {
     if (ValidationService.isObject(select)) {
       let columns = Object.values(this.columns)
         .filter((c) => !!select[c.column])
-        .map((c) => `${alias ? alias : this.table}.${c.column}`);
+        .map((c) => `"${alias ? alias : this.table}"."${c.column}"`);
       if (extras && ValidationService.isObject(extras)) {
         columns = columns.concat(
           Object.values(extras)
@@ -39,7 +39,7 @@ class Model extends DB {
         .join(",");
     }
     return Object.values(this.columns)
-      .map((c) => `${alias ? alias : this.table}.${c.column}`)
+      .map((c) => `"${alias ? alias : this.table}"."${c.column}"`)
       .join(",");
   }
   get columnsStrNoAlias() {

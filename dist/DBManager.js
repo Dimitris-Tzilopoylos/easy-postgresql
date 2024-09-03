@@ -59,7 +59,7 @@ class DBManager {
       .join(",\n");
   }
   static modelColumnToSQL(column) {
-    return `${column.column} ${column.type} ${
+    return `"${column.column}" ${column.type} ${
       column.columnConfig?.length ? `(${column.columnConfig?.length})` : ""
     } ${DBManager.modelColumnConstraints(column)}`;
   }

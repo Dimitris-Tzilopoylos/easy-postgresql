@@ -34,15 +34,15 @@ class DB {
   static replicas = [];
   static scheduler = Scheduler;
   static allowedOrderDirectionsKeys = {
-    ASC: "ASC",
-    DESC: "DESC",
-    asc: "ASC",
-    desc: "DESC",
+    ASC: "asc",
+    DESC: "desc",
+    asc: "asc",
+    desc: "desc",
     ...(IS_POSTGRES && {
-      asc_nulls_first: "ASC NULLS FIRST",
-      asc_nulls_last: "ASC NULLS LAST",
-      desc_nulls_first: "DESC NULLS FIRST",
-      desc_nulls_last: "DESC NULLS LAST",
+      asc_nulls_first: "asc nulls first",
+      asc_nulls_last: "asc nulls last",
+      desc_nulls_first: "desc nulls first",
+      desc_nulls_last: "desc nulls last",
     }),
   };
   static connectionConfig = {
@@ -275,16 +275,18 @@ class DB {
           )
         )
         .join(",");
-      let sql = `SELECT coalesce(json_agg(${alias}),'[]') as ${this.table} 
-        FROM (
-          SELECT row_to_json((
-            SELECT ${alias}
-            FROM ( SELECT ${selectColumnsStr}) ${alias} )) ${alias}
-            FROM (
-              SELECT ${this.makeDistinctOn(
+      let sql = `select coalesce(json_agg(${alias}),'[]') as ${this.table} 
+        from (
+          select row_to_json((
+            select ${alias}
+            from ( SELECT ${selectColumnsStr}) ${alias} )) ${alias}
+            from (
+              select ${this.makeDistinctOn(
                 distinct,
                 alias
-              )} ${modelColumnsStr} FROM ${this.schema}.${this.table} ${alias}`;
+              )} ${modelColumnsStr} from "${this.schema}"."${
+        this.table
+      }" ${alias}`;
       const self = this;
       function makeQuery(model, relations, depth, prevAlias) {
         if (!relations || typeof relations === "boolean") {
@@ -332,24 +334,24 @@ class DB {
               relationAlias: relation.alias,
             });
             sql += `
-              LEFT JOIN LATERAL  (${agg} 
+              left join lateral  (${agg} 
             `;
           } else {
             sql += ` 
-          LEFT OUTER JOIN LATERAL ( SELECT coalesce(json_agg(${depthAlias})${coalesceAppendex},'${coalesceFallback}') as ${
+          left outer join lateral ( select coalesce(json_agg(${depthAlias})${coalesceAppendex},'${coalesceFallback}') as ${
               relation.alias
             } 
-          FROM (
-            SELECT row_to_json((
-              SELECT ${depthAlias}
-              FROM ( SELECT ${selectColumnsStr}) ${depthAlias} )) ${depthAlias}
-              FROM (
-                SELECT ${currentModel.makeDistinctOn(
+          from (
+            select row_to_json((
+              select ${depthAlias}
+              from ( SELECT ${selectColumnsStr}) ${depthAlias} )) ${depthAlias}
+              from (
+                select ${currentModel.makeDistinctOn(
                   distinct,
                   depthAlias
-                )} ${modelColumnsStr} FROM ${currentModel?.schema}.${
+                )} ${modelColumnsStr} from "${currentModel?.schema}"."${
               currentModel.table
-            } ${depthAlias} `;
+            }" ${depthAlias} `;
           }
           const appendSql = makeQuery(
             currentModel,
@@ -386,9 +388,9 @@ class DB {
           index = idxOffset;
           if (!isAggregate) {
             sql += `
-            WHERE ${prevAlias}.${relation.from_column} = ${depthAlias}.${relation.to_column} ${whereClauseStr} ${groupByStr} ${orderByStr} ${limitStr} ${offsetStr} ) ${depthAlias}  ${appendSql} ) ${depthAlias} ) AS ${depthAlias} ON true `;
+            where "${prevAlias}"."${relation.from_column}" = "${depthAlias}"."${relation.to_column}" ${whereClauseStr} ${groupByStr} ${orderByStr} ${limitStr} ${offsetStr} ) ${depthAlias}  ${appendSql} ) ${depthAlias} ) as ${depthAlias} on true `;
           } else {
-            sql += ` WHERE ${prevAlias}.${relation.from_column} = ${depthAlias}.${relation.to_column} ${whereClauseStr} ${groupByStr} )   AS ${depthAlias} ON true `;
+            sql += ` where "${prevAlias}"."${relation.from_column}" = "${depthAlias}"."${relation.to_column}" ${whereClauseStr} ${groupByStr} )   as ${depthAlias} on true `;
           }
         }
         return sql;
@@ -688,7 +690,7 @@ class DB {
 
           acc[0].push(
             ...Object.entries(selfUpdateColumns).map(([c, val]) => {
-              const sql = `${c} = ${c} ${SELF_UPDATE_OPERATORS[key]} $${
+              const sql = `"${c}" = "${c}" ${SELF_UPDATE_OPERATORS[key]} $${
                 acc[1].length + 1 + index
               }`;
               acc[1].push(val);
@@ -702,7 +704,7 @@ class DB {
               value,
               acc[1].length
             );
-            acc[0].push(`${key} = ${str}`);
+            acc[0].push(`"${key}" = ${str}`);
             acc[1].push(...args);
           } else {
             if (value instanceof SQL) {
@@ -714,12 +716,12 @@ class DB {
                 binder: "",
               });
               if (str) {
-                acc[0].push(` ${key} = ${str} `);
+                acc[0].push(` "${key}" = ${str} `);
                 acc[1].push(...qArgs);
               }
               return acc;
             }
-            acc[0].push(`${key} = $${acc[1].length + 1 + index}`);
+            acc[0].push(`"${key}" = $${acc[1].length + 1 + index}`);
             acc[1].push(value);
           }
         }
@@ -744,12 +746,12 @@ class DB {
         true,
         true
       );
-      const sql = `UPDATE ${this.schema}.${this.table} SET ${columns.join(
+      const sql = `update "${this.schema}"."${this.table}" set ${columns.join(
         ","
-      )} ${whereStr} RETURNING *`;
+      )} ${whereStr} returning *`;
       qArgs.push(...whereArgs);
       if (DB.enableLog) {
-        console.log(sql, whereArgs);
+        console.log(sql, qArgs);
       }
       const result = await this.updateQueryExec(sql, qArgs);
       if (DB.eventExists(this.table, DB.EventNameSpaces.UPDATE)) {
@@ -789,7 +791,10 @@ class DB {
         true,
         true
       );
-      const sql = `DELETE FROM ${this.schema}.${this.table} ${whereStr} RETURNING *`;
+      const sql = `delete from "${this.schema}"."${this.table}" ${whereStr} returning *`;
+      if (DB.enableLog) {
+        console.log(sql, whereArgs);
+      }
       const result = await this.deleteQueryExec(sql, whereArgs);
       if (DB.eventExists(this.table, DB.EventNameSpaces.DELETE)) {
         DB.executeEvent(this.table, DB.EventNameSpaces.DELETE, result, this);
@@ -865,7 +870,7 @@ class DB {
       );
       const groupByStr = this.makeGroupBy(groupBy, this.table);
       // const distinctStr = this.makeDistinctOn(distinct, this.table);
-      const sql = `SELECT json_build_object(${aggregations})  as ${this.table}_aggregate FROM ${this.schema}.${this.table}  ${whereStr} ${groupByStr}`;
+      const sql = `select json_build_object(${aggregations})  as ${this.table}_aggregate from "${this.schema}"."${this.table}"  ${whereStr} ${groupByStr}`;
       if (DB.enableLog) {
         console.log(sql, whereArgs);
       }
@@ -932,12 +937,12 @@ class DB {
         );
         const groupByStr = this.makeGroupBy(groupBy, this.table);
         // const distinctStr = this.makeDistinctOn(distinct, this.table);
-        const sql = `SELECT json_build_object(${aggregations})  as ${relationAlias}_aggregate FROM ${this.schema}.${this.table} as ${alias}  ${whereStr} ${groupByStr}`;
+        const sql = `select json_build_object(${aggregations})  as ${relationAlias}_aggregate from "${this.schema}"."${this.table}" as ${alias}  ${whereStr} ${groupByStr}`;
         return [sql, whereArgs, idx];
       }
       const groupByStr = this.makeGroupBy(groupBy, this.table);
       const distinctStr = this.makeDistinctOn(distinct, this.table);
-      const sql = `SELECT ${distinctStr} json_build_object(${aggregations})  as ${relationAlias}_aggregate FROM ${this.schema}.${this.table} as ${alias} ${groupByStr}`;
+      const sql = `select ${distinctStr} json_build_object(${aggregations})  as ${relationAlias}_aggregate from "${this.schema}"."${this.table}" as ${alias} ${groupByStr}`;
       return [sql, "", index];
     } catch (error) {
       throw error;
@@ -955,12 +960,12 @@ class DB {
           : distinct
         : distinct;
       if (!formattedDistinct || !formattedDistinct?.length) {
-        return `'count',COUNT(*)`;
+        return `'count',count(*)`;
       }
-      return `'count',COUNT(DISTINCT ${formattedDistinct})`;
+      return `'count',count(distinct ${formattedDistinct})`;
     }
 
-    return `'count',COUNT(*)`;
+    return `'count',count(*)`;
   }
   buildAgg(aggConfig, key) {
     if (!DB.isObject(aggConfig)) {
@@ -974,7 +979,7 @@ class DB {
     return `'${SupportedAggregations[
       key
     ].toLowerCase()}',json_build_object(${columns
-      .map((column) => `'${column}',${SupportedAggregations[key]}(${column})`)
+      .map((column) => `'${column}',${SupportedAggregations[key]}("${column}")`)
       .join(",")})`;
   }
   isGeospatialColumn(key) {
@@ -1018,7 +1023,7 @@ class DB {
 
     const [columns, placeholders, qArgs] = Object.entries(args).reduce(
       (acc, [key, value]) => {
-        acc[0].push(key);
+        acc[0].push(`"${key}"`);
         if (this.isGeospatialColumn(key)) {
           const [str, args, currentIndex] =
             this.getGeospatialColumnValueForStatement(key, value, index);
@@ -1043,15 +1048,15 @@ class DB {
       (typeof constraint === "string" ||
         (Array.isArray(constraint) && constraint.length > 0))
     ) {
-      conflictSql = ` ON CONFLICT (${
+      conflictSql = ` on conflict (${
         Array.isArray(constraint) ? constraint.join(",") : constraint
       }) `;
       if (!!ignore) {
-        conflictSql += ` DO NOTHING `;
+        conflictSql += ` do nothing `;
       } else if (update?.length) {
         const columns = update
           .reduce((acc, c) => {
-            acc.push(`${c} = EXCLUDED.${c}`);
+            acc.push(`"${c}" = EXCLUDED."${c}"`);
             return acc;
           }, [])
           .join(",");
@@ -1064,15 +1069,15 @@ class DB {
           true
         );
 
-        conflictSql += ` DO UPDATE SET ${columns} ${whereStr}`;
+        conflictSql += ` do update set ${columns} ${whereStr}`;
         qArgs.push(...whereArgs);
       }
     }
     // const conflictingSql = !!ignore ? ' ON CONFLICT DO NOTHING ' : !!update && Array.isArray(update) && update.length > 0 ?   : ''
     return [
-      `INSERT INTO ${this.schema}.${this.table} (${columns.join(
+      `insert into "${this.schema}"."${this.table}" (${columns.join(
         ","
-      )}) VALUES(${placeholders.join(",")}) ${conflictSql} RETURNING *`,
+      )}) values(${placeholders.join(",")}) ${conflictSql} returning *`,
       qArgs,
     ];
   }
@@ -1082,12 +1087,12 @@ class DB {
     }
     const strFields = distinct
       .filter((col) => !!this.columns[col])
-      .map((col) => `${alias ? `${alias}.` : ""}${col}`)
+      .map((col) => `${alias ? `"${alias}".` : ""}"${col}"`)
       .join(",");
     if (!strFields.length) {
       return "";
     }
-    return `DISTINCT ON (${strFields})`;
+    return `distinct on (${strFields})`;
   }
   makeWhereClause(
     model,
@@ -1096,7 +1101,7 @@ class DB {
     alias,
     isFirstEntry = true,
     startWithWhere = true,
-    binder = "AND",
+    binder = "and",
     depth = 0
   ) {
     if (!model || !where || !DB.isObject(where)) {
@@ -1109,7 +1114,7 @@ class DB {
     if (!_iter?.length) {
       return ["", [], index];
     }
-    let sql = startWithWhere && _iter.length ? "WHERE" : "";
+    let sql = startWithWhere && _iter.length ? "where" : "";
     function getFirstEntry(isFirstEntry, operator) {
       if (isFirstEntry) {
         return "";
@@ -1192,7 +1197,7 @@ class DB {
           sql += ` ${getFirstEntry(
             isFirstEntry,
             binder
-          )} $${index} ${sqlSTR}(${alias}.${model.columns[key].column}) `;
+          )} $${index} ${sqlSTR}("${alias}"."${model.columns[key].column}") `;
           index++;
           args.push(config[arrayKey]);
           isFirstEntry = false;
@@ -1235,9 +1240,9 @@ class DB {
           isFirstEntry = false;
           continue;
         }
-        sql += ` ${getFirstEntry(isFirstEntry, binder)} ${alias}.${
+        sql += ` ${getFirstEntry(isFirstEntry, binder)} "${alias}"."${
           model.columns[key].column
-        }`;
+        }"`;
         const [qStr, qArgs, idx] = this.makeWhereClause(
           model,
           config,
@@ -1256,13 +1261,13 @@ class DB {
         const relation = model.relations[relationKey];
         const currentModel = DB.getRelatedModel(relation);
         const newAlias = this.makeDepthAlias(relation.alias, depth);
-        sql += ` ${getFirstEntry(isFirstEntry, binder)} NOT EXISTS (SELECT ${
+        sql += ` ${getFirstEntry(isFirstEntry, binder)} not exists (select "${
           relation.to_column
-        } FROM ${currentModel?.schema || DB.database}.${
+        }" from "${currentModel?.schema || DB.database}"."${
           currentModel.table
-        } ${newAlias} WHERE ${alias}.${relation.from_column} = ${newAlias}.${
-          relation.to_column
-        }`;
+        }" ${newAlias} where "${alias}"."${
+          relation.from_column
+        }" = "${newAlias}"."${relation.to_column}"`;
         const [qString, qArgs, idx] = currentModel.makeWhereClause(
           currentModel,
           where[key][relationKey],
@@ -1282,11 +1287,11 @@ class DB {
         const newAlias = this.makeDepthAlias(relation.alias, depth);
         sql += ` ${getFirstEntry(isFirstEntry, binder)} ${alias}.${
           relation.from_column
-        } IN (SELECT ${relation.to_column} FROM ${
+        } in (select "${relation.to_column}" from "${
           currentModel.schema || DB.database
-        }.${currentModel.table} ${newAlias} WHERE ${alias}.${
+        }"."${currentModel.table}" ${newAlias} where "${alias}"."${
           relation.from_column
-        } = ${newAlias}.${relation.to_column}`;
+        }" = "${newAlias}"."${relation.to_column}"`;
         const [qString, qArgs, idx] = currentModel.makeWhereClause(
           currentModel,
           where[key],
@@ -1312,9 +1317,9 @@ class DB {
     if (typeof value?.srid === "number" || typeof value?.srid === "string") {
       const { srid, ...rest } = value;
       return [
-        `ST_SetSRID(${alias}.${
+        `ST_SetSRID("${alias}"."${
           column?.column || column
-        },$${index}), ST_SetSRID(ST_GeomFromGeoJSON($${index + 1}), $${
+        }",$${index}), ST_SetSRID(ST_GeomFromGeoJSON($${index + 1}), $${
           index + 2
         })`,
         [srid, rest, srid],
@@ -1322,11 +1327,11 @@ class DB {
       ];
     } else {
       return [
-        `${alias}.${
+        `"${alias}"."${
           column?.column || column
-        }, ST_SetSRID(ST_GeomFromGeoJSON($${index}),ST_SRID(${alias}.${
+        }", ST_SetSRID(ST_GeomFromGeoJSON($${index}),ST_SRID("${alias}"."${
           column?.column || column
-        }))`,
+        }"))`,
         [value],
         index,
       ];
@@ -1437,7 +1442,7 @@ class DB {
     const strFields = groupBy
       .reduce((acc, col) => {
         if (!!this.columns[col]) {
-          acc.push(`${alias ? `${alias}.` : ""}${col}`);
+          acc.push(`${alias ? `"${alias}".` : ""}"${col}"`);
         } else if (col instanceof SQL) {
           const [sql] = col.__getSQL({
             alias: alias || this.table,
@@ -1450,7 +1455,7 @@ class DB {
     if (!strFields.length) {
       return "";
     }
-    return `GROUP BY ${strFields}`;
+    return `group by ${strFields}`;
   }
   makeOrderBy(orderBy, index, alias = "") {
     if (!orderBy) {
@@ -1461,8 +1466,8 @@ class DB {
       .reduce((acc, [key, value]) => {
         if (!!this.columns[key]) {
           acc.push(
-            ` ${alias ? `${alias}.` : ""}${key}  ${
-              DB.allowedOrderDirectionsKeys[value] || "ASC"
+            ` ${alias ? `"${alias}".` : ""}"${key}"  ${
+              DB.allowedOrderDirectionsKeys[value] || "asc"
             }`
           );
         } else if (value instanceof SQL) {
@@ -1485,19 +1490,19 @@ class DB {
       }, [])
       .join(",");
 
-    return [orderByStr ? ` ORDER BY ${orderByStr} ` : "", orderByArgs, index];
+    return [orderByStr ? `order by ${orderByStr}` : "", orderByArgs, index];
   }
   makeLimit(limit, index) {
     if (DB.isNullOrUndefinedOrEmpty(limit)) {
       return ["", [], index];
     }
-    return [`LIMIT $${index}`, [limit], index + 1];
+    return [`limit $${index}`, [limit], index + 1];
   }
   makeOffset(offset, index) {
     if (DB.isNullOrUndefinedOrEmpty(offset)) {
       return ["", [], index];
     }
-    return [`OFFSET $${index}`, [offset], index + 1];
+    return [`offset $${index}`, [offset], index + 1];
   }
   getAggregationForSorting(orderBy, currentAlias) {
     if (!DB.isObject(orderBy)) {
@@ -1532,7 +1537,7 @@ class DB {
     if (!orderByAggregationsString && !orderByColumnsString) {
       return "";
     }
-    return `ORDER BY ${orderByColumnsString} ${
+    return `order by ${orderByColumnsString} ${
       orderByColumnsString && orderByAggregationsString
         ? `,${orderByAggregationsString}`
         : orderByAggregationsString
@@ -1541,12 +1546,12 @@ class DB {
   produceOrderByForAggregations(aggrConfig, prevAlias, relation) {
     const { _count, ...rest } = aggrConfig;
     let queries = [];
-    const table = `${this.schema}.${this.table} `;
-    const whereClause = `${prevAlias}.${relation.from_column} = ${this.table}.${relation.to_column}`;
+    const table = `"${this.schema}"."${this.table}" `;
+    const whereClause = `"${prevAlias}"."${relation.from_column}" = "${this.table}"."${relation.to_column}"`;
     if (_count) {
       queries.push(
         ` (SELECT  COUNT(*) FROM ${table} WHERE ${whereClause} ) ${
-          DB.allowedOrderDirectionsKeys[_count] || "ASC"
+          DB.allowedOrderDirectionsKeys[_count] || "asc"
         }`
       );
     }
@@ -1585,7 +1590,7 @@ class DB {
           status: 400,
         };
       }
-      return `(SELECT ${aggregationKey}(${column}) FROM ${schema}.${table} WHERE ${whereClause}) ${
+      return `(SELECT ${aggregationKey}("${column}") FROM "${schema}"."${table}" WHERE ${whereClause}) ${
         DB.allowedOrderDirectionsKeys[aggrKeyConfig[column]] || "ASC"
       }`;
     });
@@ -1623,7 +1628,7 @@ class DB {
     if (ValidationService.isObject(select)) {
       let columns = Object.values(this.columns)
         .filter((c) => !!select[c.column])
-        .map((c) => `${alias ? alias : this.table}.${c.column}`);
+        .map((c) => `:${alias ? alias : this.table}"."${c.column}"`);
       if (extras && ValidationService.isObject(extras)) {
         columns = columns.concat(
           Object.values(extras)
@@ -1638,7 +1643,7 @@ class DB {
 
     if (extras && ValidationService.isObject(extras)) {
       return Object.values(this.columns)
-        .map((c) => `${alias ? alias : this.table}.${c.column}`)
+        .map((c) => `"${alias ? alias : this.table}"."${c.column}"`)
         .concat(
           Object.values(extras)
             .filter((x) => typeof x === "function")
@@ -1647,7 +1652,7 @@ class DB {
         .join(",");
     }
     return Object.values(this.columns)
-      .map((c) => `${alias ? alias : this.table}.${c.column}`)
+      .map((c) => `"${alias ? alias : this.table}"."${c.column}"`)
       .join(",");
   }
   get columnsStrNoAlias() {
