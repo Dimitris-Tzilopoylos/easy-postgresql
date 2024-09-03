@@ -16,6 +16,99 @@ declare class DBManager {
     up: string;
     down: string;
   }>;
+  static createPrimaryKey(
+    model: any,
+    name: string,
+    columns: any[]
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
+  static dropPrimaryKey(
+    model: any,
+    name: string,
+    columns: any[]
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
+  static createForeignKey(
+    fromModel: any,
+    toModel: any,
+    name: string,
+    fromColumns: any[],
+    toColumns: any[],
+    onUpdate?: "cascade" | "no action" | "restrict",
+    onDelete?: "cascade" | "no action" | "restrict"
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
+  static dropForeignKey(
+    fromModel: any,
+    toModel: any,
+    name: string,
+    fromColumns: any[],
+    toColumns: any[],
+    onUpdate?: "cascade" | "no action" | "restrict",
+    onDelete?: "cascade" | "no action" | "restrict"
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
+  static createUniqueConstraint(
+    model: any,
+    name: string,
+    columns: any[]
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
+  static dropUniqueConstraint(
+    model: any,
+    name: string,
+    columns: any[]
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
+  static createUniqueIndex(
+    model: any,
+    name: string,
+    columns: any[]
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
+  static dropUniqueIndex(
+    model: any,
+    name: string,
+    columns: any[]
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
+  static createIndex(
+    model: any,
+    name: string,
+    columns: any[],
+    type: string
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
+  static dropIndex(
+    model: any,
+    name: string,
+    columns: any[],
+    type: string
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
+  static toModelSchemaTableAlias(model: any): string;
+  static formatConstraintOrIndexColumns(columns: any[]): any[];
+  static toForeignKeyAction(type: any, value?: any);
   static modelColumnstoSql(model: any): string;
   static modelColumnToSQL(column: any): string;
   static modelColumnConstraints(column: any): string;
