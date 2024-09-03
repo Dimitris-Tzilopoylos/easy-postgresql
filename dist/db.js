@@ -191,23 +191,23 @@ class DB {
     } = await this.raw(sql, args, !!this.connection || !DB.hasReplicas());
     return result;
   }
-  async insertQueryExec(sql, args) {
-    const { rows } = this.connection
+  async insertQueryExec(sql, args, returning = true) {
+    const result = this.connection
       ? await this.connection.query(sql, args)
       : await DB.pool.query(sql, args);
-    return rows;
+    return returning ? result?.rows : [result];
   }
-  async updateQueryExec(sql, args) {
-    const { rows } = this.connection
+  async updateQueryExec(sql, args, returning = true) {
+    const result = this.connection
       ? await this.connection.query(sql, args)
       : await DB.pool.query(sql, args);
-    return rows;
+    return returning ? result?.rows : result;
   }
-  async deleteQueryExec(sql, args) {
-    const { rows } = this.connection
+  async deleteQueryExec(sql, args, returning = true) {
+    const result = this.connection
       ? await this.connection.query(sql, args)
       : await DB.pool.query(sql, args);
-    return rows;
+    return returning ? result?.rows : result;
   }
   async raw(sql, args = [], primary = true) {
     if (this.connection) {
@@ -458,14 +458,22 @@ class DB {
       return null;
     }
     try {
-      const { onConflict, ...rest } = args;
-      const [modelPayload, relationalPayload] =
+      let { onConflict, returning = true, ...rest } = args;
+      const [modelPayload, relationalPayload, hasRelations] =
         this.splitRelationalAndModelColumnsInput(rest);
-      const [query, qArgs] = this.buildInsertQuery(modelPayload, onConflict);
+
+      if (hasRelations) {
+        returning = true;
+      }
+      const [query, qArgs] = this.buildInsertQuery(
+        modelPayload,
+        onConflict,
+        returning
+      );
       if (DB.enableLog) {
         console.log(query, qArgs);
       }
-      const [result] = await this.insertQueryExec(query, qArgs);
+      const [result] = await this.insertQueryExec(query, qArgs, returning);
       const self = this;
       async function insertChildren(model, prevResult, relationalPayload) {
         const _iter = Object.keys(relationalPayload || {});
@@ -503,9 +511,13 @@ class DB {
               insertionModel.splitRelationalAndModelColumnsInput(rest);
             const [query, args] = insertionModel.buildInsertQuery(
               modelPayload,
-              onConflict
+              onConflict,
+              returning
             );
-            const [result] = await self.insertQueryExec(query, args);
+            if (DB.enableLog) {
+              console.log(query, args);
+            }
+            const [result] = await self.insertQueryExec(query, args, returning);
             const childrenResult = await insertChildren(
               insertionModel,
               result,
@@ -731,7 +743,7 @@ class DB {
       [[], []]
     );
   }
-  async update({ update, where = {} }) {
+  async update({ update, where = {}, returning = true }) {
     try {
       const [modelColumns] = this.splitRelationalAndModelColumnsInput(
         update,
@@ -748,12 +760,12 @@ class DB {
       );
       const sql = `update "${this.schema}"."${this.table}" set ${columns.join(
         ","
-      )} ${whereStr} returning *`;
+      )} ${whereStr} ${returning ? `returning *` : ""}`;
       qArgs.push(...whereArgs);
       if (DB.enableLog) {
         console.log(sql, qArgs);
       }
-      const result = await this.updateQueryExec(sql, qArgs);
+      const result = await this.updateQueryExec(sql, qArgs, returning);
       if (DB.eventExists(this.table, DB.EventNameSpaces.UPDATE)) {
         DB.executeEvent(this.table, DB.EventNameSpaces.UPDATE, result, this);
       }
@@ -781,7 +793,7 @@ class DB {
       throw error;
     }
   }
-  async delete({ where = {} }) {
+  async delete({ where = {}, returning = true }) {
     try {
       const [whereStr, whereArgs] = this.makeWhereClause(
         this,
@@ -791,11 +803,13 @@ class DB {
         true,
         true
       );
-      const sql = `delete from "${this.schema}"."${this.table}" ${whereStr} returning *`;
+      const sql = `delete from "${this.schema}"."${this.table}" ${whereStr} ${
+        returning ? `returning *` : ""
+      }`;
       if (DB.enableLog) {
         console.log(sql, whereArgs);
       }
-      const result = await this.deleteQueryExec(sql, whereArgs);
+      const result = await this.deleteQueryExec(sql, whereArgs, returning);
       if (DB.eventExists(this.table, DB.EventNameSpaces.DELETE)) {
         DB.executeEvent(this.table, DB.EventNameSpaces.DELETE, result, this);
       }
@@ -1015,7 +1029,7 @@ class DB {
       srid ? currentIndex + 1 : currentIndex,
     ];
   }
-  buildInsertQuery(args, onConflict) {
+  buildInsertQuery(args, onConflict, returning = true) {
     if (!DB.isObject(args)) {
       throw new Error();
     }
@@ -1077,7 +1091,9 @@ class DB {
     return [
       `insert into "${this.schema}"."${this.table}" (${columns.join(
         ","
-      )}) values(${placeholders.join(",")}) ${conflictSql} returning *`,
+      )}) values(${placeholders.join(",")}) ${conflictSql} ${
+        returning ? `returning *` : ""
+      }`,
       qArgs,
     ];
   }
@@ -1618,10 +1634,11 @@ class DB {
           acc[0][key] = value;
         } else {
           acc[1][key] = value;
+          acc[2] = true;
         }
         return acc;
       },
-      [{}, {}]
+      [{}, {}, false]
     );
   }
   getModelColumnsCommaSeperatedString(alias, select, extras) {

@@ -112,15 +112,16 @@ DB.enableLog = true;
 const mdl = new SensorData();
 
 mdl
-  .delete({
-    update: {
-      device_id: "sensor_new_orm",
-      created_at: new SQL(() => [" created_at + INTERVAL  %v", ["1 hour"]]),
-    },
-    where: {
-      device_id: { _eq: "sensor_new_orm" },
-      id: { _eq: "69cec7c8-934a-4271-9ec0-fddae29d2c53" },
-    },
+  .create({
+    // update: {
+    //   device_id: "sensor_new_orm",
+    // },
+    // where: {
+    //   device_id: { _eq: "sensor_new_orm" },
+    // },
+    device_id: "new_insert_returning",
+    created_at: new Date(),
+    returning: true,
   })
   .then((res) => {
     console.log(res);

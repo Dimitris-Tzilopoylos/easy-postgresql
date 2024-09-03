@@ -142,9 +142,9 @@ declare class DB {
   rollback(): Promise<void>;
   withTransaction(cb: any): Promise<any>;
   selectQueryExec(sql: any, args?: any[]): Promise<any>;
-  insertQueryExec(sql: any, args: any): Promise<any>;
-  updateQueryExec(sql: any, args: any): Promise<any>;
-  deleteQueryExec(sql: any, args: any): Promise<any>;
+  insertQueryExec(sql: any, args: any, returning?: boolean): Promise<any>;
+  updateQueryExec(sql: any, args: any, returning?: boolean): Promise<any>;
+  deleteQueryExec(sql: any, args: any, returning?: boolean): Promise<any>;
   raw(sql: any, args?: any[], primary?: boolean): Promise<any>;
   findOne({
     where,
@@ -193,8 +193,22 @@ declare class DB {
   createManyTX(args: any): Promise<any>;
   create(args: any): Promise<any>;
   createMany(args: any): Promise<any[]>;
-  update({ update, where }: { update: any; where?: any }): Promise<any>;
-  delete({ where }: { where?: any }): Promise<any>;
+  update({
+    update,
+    where,
+    returning,
+  }: {
+    update: any;
+    where?: any;
+    returning?: boolean;
+  }): Promise<any>;
+  delete({
+    where,
+    returning,
+  }: {
+    where?: any;
+    returning?: boolean;
+  }): Promise<any>;
   aggregate({
     where,
     groupBy,
@@ -248,7 +262,11 @@ declare class DB {
     data?: any,
     currentIndex?: any
   ): any;
-  buildInsertQuery(args: any, onConflict: any): (string | any[])[];
+  buildInsertQuery(
+    args: any,
+    onConflict: any,
+    returning?: boolean
+  ): (string | any[])[];
   makeDistinctOn(distinct: any, alias: any): string;
   makeWhereClause(
     model: any,
@@ -308,7 +326,7 @@ declare class DB {
   }): string[];
   makeColumnAlias(col: any): any;
   makeDepthAlias(alias: any, depth: any): string;
-  splitRelationalAndModelColumnsInput(args: any, allowedEntries?: any[]): {}[];
+  splitRelationalAndModelColumnsInput(args: any, allowedEntries?: any[]): any;
   getModelColumnsCommaSeperatedString(
     alias: any,
     select?: any,
