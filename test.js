@@ -112,13 +112,7 @@ DB.enableLog = true;
 const mdl = new SensorData();
 
 mdl
-  .create({
-    // update: {
-    //   device_id: "sensor_new_orm",
-    // },
-    // where: {
-    //   device_id: { _eq: "sensor_new_orm" },
-    // },
+  .delete({
     device_id: "new_insert_returning",
     created_at: new Date(),
     returning: true,

@@ -41,13 +41,13 @@ declare class DB {
   static postgis: boolean;
   static client: any;
   static clientConnected: boolean;
-  static brokerEvents: {};
+  static brokerEvents: any;
   static notificationRegistered: boolean;
   static events: {
-    [x: string]: {};
+    [x: string]: any;
   };
   static asyncEvents: {
-    [x: string]: {};
+    [x: string]: any;
   };
   static hasReplicas(): any;
   static roundRobinReplicaPoolRetrieval(): any;
@@ -65,16 +65,116 @@ declare class DB {
   static isString(value: any): boolean;
   static isNullOrUndefined(value: any): boolean;
   static isNullOrUndefinedOrEmpty(value: any): boolean;
-  static onSelect(table: any, cb: any): void;
-  static onInsert(table: any, cb: any): void;
-  static onUpdate(table: any, cb: any): void;
-  static onDelete(table: any, cb: any): void;
-  static onError(table: any, cb: any): void;
-  static onSelectAsync(table: any, cb: any): void;
-  static onInsertAsync(table: any, cb: any): void;
-  static onUpdateAsync(table: any, cb: any): void;
-  static onDeleteAsync(table: any, cb: any): void;
-  static onErrorAsync(table: any, cb: any): void;
+  static onSelect(
+    schema: any,
+    table: any,
+    cb: (
+      schema: string,
+      table: string,
+      namespace: string,
+      data: any,
+      model: DB
+    ) => Promise | void
+  ): void;
+  static onInsert(
+    schema: any,
+    table: any,
+    cb: (
+      schema: string,
+      table: string,
+      namespace: string,
+      data: any,
+      model: DB
+    ) => Promise | void
+  ): void;
+  static onUpdate(
+    schema: any,
+    table: any,
+    cb: (
+      schema: string,
+      table: string,
+      namespace: string,
+      data: any,
+      model: DB
+    ) => Promise | void
+  ): void;
+  static onDelete(
+    schema: any,
+    table: any,
+    cb: (
+      schema: string,
+      table: string,
+      namespace: string,
+      data: any,
+      model: DB
+    ) => Promise | void
+  ): void;
+  static onError(
+    schema: any,
+    table: any,
+    cb: (
+      schema: string,
+      table: string,
+      namespace: string,
+      error: any,
+      model: DB
+    ) => Promise | void
+  ): void;
+  static onSelectAsync(
+    schema: any,
+    table: any,
+    cb: (
+      schema: string,
+      table: string,
+      namespace: string,
+      data: any,
+      model: DB
+    ) => Promise
+  ): void;
+  static onInsertAsync(
+    schema: any,
+    table: any,
+    cb: (
+      schema: string,
+      table: string,
+      namespace: string,
+      data: any,
+      model: DB
+    ) => Promise
+  ): void;
+  static onUpdateAsync(
+    schema: any,
+    table: any,
+    cb: (
+      schema: string,
+      table: string,
+      namespace: string,
+      data: any,
+      model: DB
+    ) => Promise
+  ): void;
+  static onDeleteAsync(
+    schema: any,
+    table: any,
+    cb: (
+      schema: string,
+      table: string,
+      namespace: string,
+      data: any,
+      model: DB
+    ) => Promise
+  ): void;
+  static onErrorAsync(
+    schema: any,
+    table: any,
+    cb: (
+      schema: string,
+      table: string,
+      namespace: string,
+      error: any,
+      model: DB
+    ) => Promise
+  ): void;
   static subscriber(
     event: any,
     cb: any
@@ -85,19 +185,21 @@ declare class DB {
   static unsubscribeEvent(event: any): void;
   static unsubscribeAllEvents(): void;
   static executeEvent(
+    schema: any,
     table: any,
     namespace: any,
     data: any,
     instance: any
   ): any;
   static executeAsyncEvent(
+    schema: any,
     table: any,
     namespace: any,
     data: any,
     instance: any
   ): Promise<any>;
-  static eventExists(table: any, namespace: any): boolean;
-  static asyncEventExists(table: any, namespace: any): boolean;
+  static eventExists(schema: any, table: any, namespace: any): boolean;
+  static asyncEventExists(schema: any, table: any, namespace: any): boolean;
   static paginator(
     page: any,
     view: any,

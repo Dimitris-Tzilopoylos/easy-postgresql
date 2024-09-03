@@ -426,11 +426,20 @@ class DB {
         console.log(sql, args);
       }
       const result = (await this.selectQueryExec(sql, args))?.[this.table];
-      if (DB.eventExists(this.table, DB.EventNameSpaces.SELECT)) {
-        DB.executeEvent(this.table, DB.EventNameSpaces.SELECT, result, this);
+      if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.SELECT)) {
+        DB.executeEvent(
+          this.schema,
+          this.table,
+          DB.EventNameSpaces.SELECT,
+          result,
+          this
+        );
       }
-      if (DB.asyncEventExists(this.table, DB.EventNameSpaces.SELECT)) {
+      if (
+        DB.asyncEventExists(this.schema, this.table, DB.EventNameSpaces.SELECT)
+      ) {
         await DB.executeAsyncEvent(
+          this.schema,
           this.table,
           DB.EventNameSpaces.SELECT,
           result,
@@ -439,11 +448,20 @@ class DB {
       }
       return result;
     } catch (error) {
-      if (DB.eventExists(this.table, DB.EventNameSpaces.ERROR)) {
-        DB.executeEvent(this.table, DB.EventNameSpaces.ERROR, error, this);
+      if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)) {
+        DB.executeEvent(
+          this.schema,
+          this.table,
+          DB.EventNameSpaces.ERROR,
+          error,
+          this
+        );
       }
-      if (DB.asyncEventExists(this.table, DB.EventNameSpaces.ERROR)) {
+      if (
+        DB.asyncEventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)
+      ) {
         await DB.executeAsyncEvent(
+          this.schema,
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
@@ -556,11 +574,20 @@ class DB {
         return await this.insert(args);
       });
       this.disconnect();
-      if (DB.eventExists(this.table, DB.EventNameSpaces.INSERT)) {
-        DB.executeEvent(this.table, DB.EventNameSpaces.INSERT, result, this);
+      if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.INSERT)) {
+        DB.executeEvent(
+          this.schema,
+          this.table,
+          DB.EventNameSpaces.INSERT,
+          result,
+          this
+        );
       }
-      if (DB.asyncEventExists(this.table, DB.EventNameSpaces.INSERT)) {
+      if (
+        DB.asyncEventExists(this.schema, this.table, DB.EventNameSpaces.INSERT)
+      ) {
         await DB.executeAsyncEvent(
+          this.schema,
           this.table,
           DB.EventNameSpaces.INSERT,
           result,
@@ -570,11 +597,20 @@ class DB {
       return result;
     } catch (error) {
       this.disconnect();
-      if (DB.eventExists(this.table, DB.EventNameSpaces.ERROR)) {
-        DB.executeEvent(this.table, DB.EventNameSpaces.ERROR, error, this);
+      if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)) {
+        DB.executeEvent(
+          this.schema,
+          this.table,
+          DB.EventNameSpaces.ERROR,
+          error,
+          this
+        );
       }
-      if (DB.eventExists(this.table, DB.EventNameSpaces.ERROR)) {
+      if (
+        DB.asyncEventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)
+      ) {
         await DB.executeAsyncEvent(
+          this.schema,
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
@@ -595,11 +631,20 @@ class DB {
         return await Promise.all(promises);
       });
       this.disconnect();
-      if (DB.eventExists(this.table, DB.EventNameSpaces.INSERT)) {
-        DB.executeEvent(this.table, DB.EventNameSpaces.INSERT, result, this);
+      if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.INSERT)) {
+        DB.executeEvent(
+          this.schema,
+          this.table,
+          DB.EventNameSpaces.INSERT,
+          result,
+          this
+        );
       }
-      if (DB.asyncEventExists(this.table, DB.EventNameSpaces.INSERT)) {
+      if (
+        DB.asyncEventExists(this.schema, this.table, DB.EventNameSpaces.INSERT)
+      ) {
         await DB.executeAsyncEvent(
+          this.schema,
           this.table,
           DB.EventNameSpaces.INSERT,
           result,
@@ -609,11 +654,20 @@ class DB {
       return result;
     } catch (error) {
       this.disconnect();
-      if (DB.eventExists(this.table, DB.EventNameSpaces.ERROR)) {
-        DB.executeEvent(this.table, DB.EventNameSpaces.ERROR, error, this);
+      if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)) {
+        DB.executeEvent(
+          this.schema,
+          this.table,
+          DB.EventNameSpaces.ERROR,
+          error,
+          this
+        );
       }
-      if (DB.asyncEventExists(this.table, DB.EventNameSpaces.ERROR)) {
+      if (
+        DB.asyncEventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)
+      ) {
         await DB.executeAsyncEvent(
+          this.schema,
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
@@ -626,11 +680,20 @@ class DB {
   async create(args) {
     try {
       const result = await this.insert(args);
-      if (DB.eventExists(this.table, DB.EventNameSpaces.INSERT)) {
-        DB.executeEvent(this.table, DB.EventNameSpaces.INSERT, result, this);
+      if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.INSERT)) {
+        DB.executeEvent(
+          this.schema,
+          this.table,
+          DB.EventNameSpaces.INSERT,
+          result,
+          this
+        );
       }
-      if (DB.asyncEventExists(this.table, DB.EventNameSpaces.INSERT)) {
+      if (
+        DB.asyncEventExists(this.schema, this.table, DB.EventNameSpaces.INSERT)
+      ) {
         await DB.executeAsyncEvent(
+          this.schema,
           this.table,
           DB.EventNameSpaces.INSERT,
           result,
@@ -639,11 +702,20 @@ class DB {
       }
       return result;
     } catch (error) {
-      if (DB.eventExists(this.table, DB.EventNameSpaces.ERROR)) {
-        DB.executeEvent(this.table, DB.EventNameSpaces.ERROR, error, this);
+      if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)) {
+        DB.executeEvent(
+          this.schema,
+          this.table,
+          DB.EventNameSpaces.ERROR,
+          error,
+          this
+        );
       }
-      if (DB.asyncEventExists(this.table, DB.EventNameSpaces.ERROR)) {
+      if (
+        DB.asyncEventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)
+      ) {
         await DB.executeAsyncEvent(
+          this.schema,
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
@@ -660,11 +732,20 @@ class DB {
       }
       const promises = args.map((input) => this.insert(input));
       const result = await Promise.all(promises);
-      if (DB.eventExists(this.table, DB.EventNameSpaces.INSERT)) {
-        DB.executeEvent(this.table, DB.EventNameSpaces.INSERT, result, this);
+      if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.INSERT)) {
+        DB.executeEvent(
+          this.schema,
+          this.table,
+          DB.EventNameSpaces.INSERT,
+          result,
+          this
+        );
       }
-      if (DB.asyncEventExists(this.table, DB.EventNameSpaces.INSERT)) {
+      if (
+        DB.asyncEventExists(this.schema, this.table, DB.EventNameSpaces.INSERT)
+      ) {
         await DB.executeAsyncEvent(
+          this.schema,
           this.table,
           DB.EventNameSpaces.INSERT,
           result,
@@ -673,11 +754,20 @@ class DB {
       }
       return result;
     } catch (error) {
-      if (DB.eventExists(this.table, DB.EventNameSpaces.ERROR)) {
-        DB.executeEvent(this.table, DB.EventNameSpaces.ERROR, error, this);
+      if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)) {
+        DB.executeEvent(
+          this.schema,
+          this.table,
+          DB.EventNameSpaces.ERROR,
+          error,
+          this
+        );
       }
-      if (DB.asyncEventExists(this.table, DB.EventNameSpaces.ERROR)) {
+      if (
+        DB.asyncEventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)
+      ) {
         await DB.executeAsyncEvent(
+          this.schema,
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
@@ -766,11 +856,20 @@ class DB {
         console.log(sql, qArgs);
       }
       const result = await this.updateQueryExec(sql, qArgs, returning);
-      if (DB.eventExists(this.table, DB.EventNameSpaces.UPDATE)) {
-        DB.executeEvent(this.table, DB.EventNameSpaces.UPDATE, result, this);
+      if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.UPDATE)) {
+        DB.executeEvent(
+          this.schema,
+          this.table,
+          DB.EventNameSpaces.UPDATE,
+          result,
+          this
+        );
       }
-      if (DB.asyncEventExists(this.table, DB.EventNameSpaces.UPDATE)) {
+      if (
+        DB.asyncEventExists(this.schema, this.table, DB.EventNameSpaces.UPDATE)
+      ) {
         await DB.executeAsyncEvent(
+          this.schema,
           this.table,
           DB.EventNameSpaces.UPDATE,
           result,
@@ -779,11 +878,20 @@ class DB {
       }
       return result;
     } catch (error) {
-      if (DB.eventExists(this.table, DB.EventNameSpaces.ERROR)) {
-        DB.executeEvent(this.table, DB.EventNameSpaces.ERROR, error, this);
+      if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)) {
+        DB.executeEvent(
+          this.schema,
+          this.table,
+          DB.EventNameSpaces.ERROR,
+          error,
+          this
+        );
       }
-      if (DB.asyncEventExists(this.table, DB.EventNameSpaces.ERROR)) {
+      if (
+        DB.asyncEventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)
+      ) {
         await DB.executeAsyncEvent(
+          this.schema,
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
@@ -810,11 +918,20 @@ class DB {
         console.log(sql, whereArgs);
       }
       const result = await this.deleteQueryExec(sql, whereArgs, returning);
-      if (DB.eventExists(this.table, DB.EventNameSpaces.DELETE)) {
-        DB.executeEvent(this.table, DB.EventNameSpaces.DELETE, result, this);
+      if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.DELETE)) {
+        DB.executeEvent(
+          this.schema,
+          this.table,
+          DB.EventNameSpaces.DELETE,
+          result,
+          this
+        );
       }
-      if (DB.asyncEventExists(this.table, DB.EventNameSpaces.DELETE)) {
+      if (
+        DB.asyncEventExists(this.schema, this.table, DB.EventNameSpaces.DELETE)
+      ) {
         await DB.executeAsyncEvent(
+          this.schema,
           this.table,
           DB.EventNameSpaces.DELETE,
           result,
@@ -823,11 +940,20 @@ class DB {
       }
       return result;
     } catch (error) {
-      if (DB.eventExists(this.table, DB.EventNameSpaces.ERROR)) {
-        DB.executeEvent(this.table, DB.EventNameSpaces.ERROR, error, this);
+      if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)) {
+        DB.executeEvent(
+          this.schema,
+          this.table,
+          DB.EventNameSpaces.ERROR,
+          error,
+          this
+        );
       }
-      if (DB.asyncEventExists(this.table, DB.EventNameSpaces.ERROR)) {
+      if (
+        DB.asyncEventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)
+      ) {
         await DB.executeAsyncEvent(
+          this.schema,
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
@@ -1757,35 +1883,65 @@ class DB {
   static isNullOrUndefinedOrEmpty(value) {
     return this.isNull(value) || this.isUndefined(value) || value === "";
   }
-  static onSelect(table, cb) {
-    DB.events[DB.EventNameSpaces.SELECT][table] = cb;
+  static onSelect(schema, table, cb) {
+    if (!DB.events[DB.EventNameSpaces.SELECT][schema]) {
+      DB.events[DB.EventNameSpaces.SELECT][schema] = {};
+    }
+    DB.events[DB.EventNameSpaces.SELECT][schema][table] = cb;
   }
-  static onInsert(table, cb) {
-    DB.events[DB.EventNameSpaces.INSERT][table] = cb;
+  static onInsert(schema, table, cb) {
+    if (!DB.events[DB.EventNameSpaces.INSERT][schema]) {
+      DB.events[DB.EventNameSpaces.INSERT][schema] = {};
+    }
+    DB.events[DB.EventNameSpaces.INSERT][schema][table] = cb;
   }
-  static onUpdate(table, cb) {
-    DB.events[DB.EventNameSpaces.UPDATE][table] = cb;
+  static onUpdate(schema, table, cb) {
+    if (!DB.events[DB.EventNameSpaces.UPDATE][schema]) {
+      DB.events[DB.EventNameSpaces.UPDATE][schema] = {};
+    }
+    DB.events[DB.EventNameSpaces.UPDATE][schema][table] = cb;
   }
-  static onDelete(table, cb) {
-    DB.events[DB.EventNameSpaces.DELETE][table] = cb;
+  static onDelete(schema, table, cb) {
+    if (!DB.events[DB.EventNameSpaces.DELETE][schema]) {
+      DB.events[DB.EventNameSpaces.DELETE][schema] = {};
+    }
+    DB.events[DB.EventNameSpaces.DELETE][schema][table] = cb;
   }
-  static onError(table, cb) {
-    DB.events[DB.EventNameSpaces.ERROR][table] = cb;
+  static onError(schema, table, cb) {
+    if (!DB.events[DB.EventNameSpaces.ERROR][schema]) {
+      DB.events[DB.EventNameSpaces.ERROR][schema] = {};
+    }
+    DB.events[DB.EventNameSpaces.ERROR][schema][table] = cb;
   }
-  static onSelectAsync(table, cb) {
-    DB.asyncEvents[DB.EventNameSpaces.SELECT][table] = cb;
+  static onSelectAsync(schema, table, cb) {
+    if (!DB.asyncEvents[DB.EventNameSpaces.SELECT][schema]) {
+      DB.asyncEvents[DB.EventNameSpaces.SELECT][schema] = {};
+    }
+    DB.asyncEvents[DB.EventNameSpaces.SELECT][schema][table] = cb;
   }
-  static onInsertAsync(table, cb) {
-    DB.asyncEvents[DB.EventNameSpaces.INSERT][table] = cb;
+  static onInsertAsync(schema, table, cb) {
+    if (!DB.asyncEvents[DB.EventNameSpaces.INSERT][schema]) {
+      DB.asyncEvents[DB.EventNameSpaces.INSERT][schema] = {};
+    }
+    DB.asyncEvents[DB.EventNameSpaces.INSERT][schema][table] = cb;
   }
-  static onUpdateAsync(table, cb) {
-    DB.asyncEvents[DB.EventNameSpaces.UPDATE][table] = cb;
+  static onUpdateAsync(schema, table, cb) {
+    if (!DB.asyncEvents[DB.EventNameSpaces.UPDATE][schema]) {
+      DB.asyncEvents[DB.EventNameSpaces.UPDATE][schema] = {};
+    }
+    DB.asyncEvents[DB.EventNameSpaces.UPDATE][schema][table] = cb;
   }
-  static onDeleteAsync(table, cb) {
-    DB.asyncEvents[DB.EventNameSpaces.DELETE][table] = cb;
+  static onDeleteAsync(schema, table, cb) {
+    if (!DB.asyncEvents[DB.EventNameSpaces.DELETE][schema]) {
+      DB.asyncEvents[DB.EventNameSpaces.DELETE][schema] = {};
+    }
+    DB.asyncEvents[DB.EventNameSpaces.DELETE][schema][table] = cb;
   }
-  static onErrorAsync(table, cb) {
-    DB.asyncEvents[DB.EventNameSpaces.ERROR][table] = cb;
+  static onErrorAsync(schema, table, cb) {
+    if (!DB.asyncEvents[DB.EventNameSpaces.ERROR][schema]) {
+      DB.asyncEvents[DB.EventNameSpaces.ERROR][schema] = {};
+    }
+    DB.asyncEvents[DB.EventNameSpaces.ERROR][schema][table] = cb;
   }
   static subscriber(event, cb) {
     try {
@@ -1862,25 +2018,25 @@ class DB {
       console.log(error);
     }
   }
-  static executeEvent(table, namespace, data, instance) {
-    const handler = DB.events?.[namespace]?.[table];
+  static executeEvent(schema, table, namespace, data, instance) {
+    const handler = DB.events?.[namespace]?.[schema]?.[table];
     if (!handler) {
       return null;
     }
     handler(data, instance);
   }
-  static async executeAsyncEvent(table, namespace, data, instance) {
-    const handler = DB.asyncEvents?.[namespace]?.[table];
+  static async executeAsyncEvent(schema, table, namespace, data, instance) {
+    const handler = DB.asyncEvents?.[namespace]?.[schema]?.[table];
     if (!handler) {
       return null;
     }
     await handler(data, instance);
   }
-  static eventExists(table, namespace) {
-    return !!DB.events[namespace][table];
+  static eventExists(schema, table, namespace) {
+    return !!DB.events?.[namespace]?.[schema]?.[table];
   }
-  static asyncEventExists(table, namespace) {
-    return !!DB.asyncEvents[namespace][table];
+  static asyncEventExists(schema, table, namespace) {
+    return !!DB.asyncEvents[namespace]?.[schema]?.[table];
   }
   static paginator(page, view, total) {
     page = +page;
