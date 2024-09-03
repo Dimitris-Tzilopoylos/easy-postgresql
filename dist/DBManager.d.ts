@@ -122,9 +122,60 @@ declare class DBManager {
     up: string;
     down: string;
   }>;
+  static addColumn(
+    model: any,
+    column: Column
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
+  static dropColumn(
+    model: any,
+    column: Column
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
+  static renameColumn(
+    model: any,
+    column: Column,
+    newName: string
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
+  static setColumnDefaultValue(
+    model: any,
+    column: Column,
+    defaultValue: any
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
+  static dropColumnDefaultValue(
+    model: any,
+    column: Column
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
+  static setColumnNotNullable(
+    model: any,
+    column: Column
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
+  static setColumnNullable(
+    model: any,
+    column: Column
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
   static toModelSchemaTableAlias(model: any): string;
   static formatConstraintOrIndexColumns(columns: any[]): any[];
-  static toForeignKeyAction(type: any, value?: any);
+  static toForeignKeyAction(type: any, value?: any): string;
   static modelColumnstoSql(model: any): string;
   static modelColumnToSQL(column: any): string;
   static modelColumnConstraints(column: any): string;
@@ -132,3 +183,4 @@ declare class DBManager {
   static exec(sql: any, args?: any[]): Promise<void>;
   static runBash(depth?: number): Promise<void>;
 }
+import Column = require("./column");

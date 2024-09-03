@@ -329,6 +329,126 @@ class DBManager {
       down,
     };
   }
+  static async addColumn(model, column) {
+    const up = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} add column ${DBManager.modelColumnToSQL(column)};`;
+    const down = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} drop column "${column.column}";`;
+    await DB.pool.query(up);
+    return {
+      up,
+      down,
+    };
+  }
+  static async dropColumn(model, column) {
+    const down = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} add column ${DBManager.modelColumnToSQL(column)};`;
+    const up = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} drop column "${column.column}";`;
+    await DB.pool.query(up);
+    return {
+      up,
+      down,
+    };
+  }
+  static async renameColumn(model, column, newName) {
+    const up = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} rename column "${column.column}" to "${newName}";`;
+    const down = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} rename column "${newName}" to "${column.column}";`;
+    await DB.pool.query(up);
+    return {
+      up,
+      down,
+    };
+  }
+  static async setColumnDefaultValue(model, column, defaultValue) {
+    const up = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} alter column "${column.column}" set default ${defaultValue};`;
+
+    let down = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} alter column "${column.column}" drop default;`;
+    if (typeof column.columnConfig.defaultValue !== "undefined") {
+      down = `alter table ${DBManager.toModelSchemaTableAlias(
+        model
+      )} alter column "${column.column}" set default ${
+        column.columnConfig.defaultValue
+      };`;
+    }
+    await DB.pool.query(up);
+    return {
+      up,
+      down,
+    };
+  }
+  static async dropColumnDefaultValue(model, column) {
+    let down = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} alter column "${column.column}" set default ${defaultValue};`;
+    const up = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} alter column "${column.column}" drop default;`;
+    if (typeof column.columnConfig.defaultValue !== "undefined") {
+      down = `alter table ${DBManager.toModelSchemaTableAlias(
+        model
+      )} alter column "${column.column}" set default ${
+        column.columnConfig.defaultValue
+      };`;
+    }
+    await DB.pool.query(up);
+    return {
+      up,
+      down,
+    };
+  }
+  static async setColumnNotNullable(model, column) {
+    let down = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} alter column "${column.column}" drop not null;`;
+
+    const up = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} alter column "${column.column}" set not null;`;
+    if (
+      typeof column.columnConfig.nullable !== "undefined" &&
+      column.columnConfig.nullable
+    ) {
+      down = up;
+    }
+    await DB.pool.query(up);
+    return {
+      up,
+      down,
+    };
+  }
+  static async setColumnNullable(model, column) {
+    const up = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} alter column "${column.column}" drop not null;`;
+
+    let down = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} alter column "${column.column}" set not null;`;
+    if (
+      typeof column.columnConfig.nullable !== "undefined" &&
+      column.columnConfig.nullable
+    ) {
+      down = up;
+    }
+    await DB.pool.query(up);
+    return {
+      up,
+      down,
+    };
+  }
   static toModelSchemaTableAlias(model) {
     return `${model?.schema ? `"${model.schema}".` : ""}"${model.table}"`;
   }
