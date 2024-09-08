@@ -74,7 +74,7 @@ declare class DB {
       namespace: string,
       data: any,
       model: DB
-    ) => Promise | void
+    ) => Promise<void> | void
   ): void;
   static onInsert(
     schema: any,
@@ -85,7 +85,7 @@ declare class DB {
       namespace: string,
       data: any,
       model: DB
-    ) => Promise | void
+    ) => Promise<void> | void
   ): void;
   static onUpdate(
     schema: any,
@@ -96,7 +96,7 @@ declare class DB {
       namespace: string,
       data: any,
       model: DB
-    ) => Promise | void
+    ) => Promise<void> | void
   ): void;
   static onDelete(
     schema: any,
@@ -107,7 +107,7 @@ declare class DB {
       namespace: string,
       data: any,
       model: DB
-    ) => Promise | void
+    ) => Promise<void> | void
   ): void;
   static onError(
     schema: any,
@@ -118,7 +118,7 @@ declare class DB {
       namespace: string,
       error: any,
       model: DB
-    ) => Promise | void
+    ) => Promise<void> | void
   ): void;
   static onSelectAsync(
     schema: any,
@@ -129,7 +129,7 @@ declare class DB {
       namespace: string,
       data: any,
       model: DB
-    ) => Promise
+    ) => Promise<void>
   ): void;
   static onInsertAsync(
     schema: any,
@@ -140,7 +140,7 @@ declare class DB {
       namespace: string,
       data: any,
       model: DB
-    ) => Promise
+    ) => Promise<void>
   ): void;
   static onUpdateAsync(
     schema: any,
@@ -151,7 +151,7 @@ declare class DB {
       namespace: string,
       data: any,
       model: DB
-    ) => Promise
+    ) => Promise<void>
   ): void;
   static onDeleteAsync(
     schema: any,
@@ -162,7 +162,7 @@ declare class DB {
       namespace: string,
       data: any,
       model: DB
-    ) => Promise
+    ) => Promise<void>
   ): void;
   static onErrorAsync(
     schema: any,
@@ -173,7 +173,7 @@ declare class DB {
       namespace: string,
       error: any,
       model: DB
-    ) => Promise
+    ) => Promise<void>
   ): void;
   static subscriber(
     event: any,
@@ -249,6 +249,48 @@ declare class DB {
   deleteQueryExec(sql: any, args: any, returning?: boolean): Promise<any>;
   raw(sql: any, args?: any[], primary?: boolean): Promise<any>;
   findOne({
+    where,
+    include,
+    aggregate,
+    select,
+    orderBy,
+    groupBy,
+    distinct,
+    extras,
+  }?: {
+    where?: any;
+    include?: any;
+    aggregate?: any;
+    orderBy?: any;
+    groupBy?: any;
+    select?: any;
+    distinct?: any;
+    extras?: { [key: string]: (x: string) => string };
+  }): Promise<any>;
+  select({
+    where,
+    include,
+    aggregate,
+    orderBy,
+    select,
+    groupBy,
+    distinct,
+    limit,
+    offset,
+    extras,
+  }?: {
+    where?: any;
+    include?: any;
+    aggregate?: any;
+    orderBy?: any;
+    groupBy?: any;
+    select?: any;
+    distinct?: any;
+    limit?: any;
+    offset?: any;
+    extras?: { [key: string]: (x: string) => string };
+  }): Promise<any>;
+  selectOne({
     where,
     include,
     aggregate,
