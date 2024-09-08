@@ -7,7 +7,7 @@ const Relation = require("./relation");
 const fs = require("fs");
 const loadTables = require("easy-pg-scanner");
 const path = require("path");
-
+const packageName = "test-easy-psql";
 class Postgres {
   constructor({
     connectionConfig,
@@ -152,12 +152,12 @@ class Postgres {
     if (this.options.useESM) {
       return `import { Model, Column${
         hasRelationClass ? `, Relation` : ""
-      } } from 'easy-psql'`;
+      } } from '${packageName}'`;
     }
 
     return `const { Model, Column${
       hasRelationClass ? `, Relation` : ""
-    } } = require('easy-psql');`;
+    } } = require('${packageName}');`;
   }
 
   __isTypescript() {
