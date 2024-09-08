@@ -63,19 +63,21 @@ class Postgres {
     }
     fs.mkdirSync(modelsDirectoryPath);
 
-    for (const [table, model] of Object.entries(DB.modelFactory)) {
-      const fileHeader = this.__makeImportsForModel(model);
-      const fileClass = this.__makeModelClass(model);
-      const exportFile = this.__makeExportClass(model);
-      fs.writeFileSync(
-        path.join(
-          modelsDirectoryPath,
-          `${this.__makeTableClasseName(table)}.model.${
-            this.options?.extension || "js"
-          }`
-        ),
-        `${fileHeader}\n\n${fileClass}\n\n${exportFile};`
-      );
+    for (const [schema, tables] of Object.entries(DB.modelFactory)) {
+      for (const [table, model] of Object.entries(tables)) {
+        const fileHeader = this.__makeImportsForModel(model);
+        const fileClass = this.__makeModelClass(model);
+        const exportFile = this.__makeExportClass(model);
+        fs.writeFileSync(
+          path.join(
+            modelsDirectoryPath,
+            `${schema}.${this.__makeTableClasseName(table)}.model.${
+              this.options?.extension || "js"
+            }`
+          ),
+          `${fileHeader}\n\n${fileClass}\n\n${exportFile};`
+        );
+      }
     }
   }
 
@@ -101,7 +103,9 @@ class Postgres {
       instance.table
     )} extends Model {\n\n\t\tconstructor(conn${
       this.__isTypescript() ? `?: any` : ""
-    }) {\n\t\t\tsuper('${instance.table}', conn)\n\t\t}\n\n\t\tcolumns${
+    }) {\n\t\t\tsuper('${instance.table}', conn, '${
+      instance.schema || "public"
+    }')\n\t\t}\n\n\t\tcolumns${
       this.__isTypescript() ? ": any" : ""
     } = {${Object.entries(instance.columns)
       .reduce((acc, [col, config], idx) => {
@@ -132,6 +136,10 @@ class Postgres {
           }${relation}: new Relation({\n\t\t\t\talias: "${
             config.alias
           }",\n\t\t\t\ttype: "${config.type.toLowerCase()}",\n\t\t\t\tfrom_table: "${
+            config.from_table
+          }",\n\t\t\t\tschema: "${
+            config.schema || "public"
+          }",\n\t\t\t\tfrom_table: "${
             config.from_table
           }",\n\t\t\t\tfrom_column: "${
             config.from_column
@@ -250,6 +258,8 @@ class Postgres {
       delete: instance.delete.bind(instance),
       withTransaction: instance.withTransaction.bind(instance),
       aggregate: instance.aggregate.bind(this),
+      select: instance.select.bind(this),
+      selectOne: instance.selectOne.bind(this),
       instance,
     };
   }
