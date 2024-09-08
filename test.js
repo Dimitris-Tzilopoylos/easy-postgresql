@@ -109,13 +109,11 @@ class SensorData extends Model {
 DB.register(User);
 DB.register(Role);
 DB.enableLog = true;
-const mdl = new SensorData();
+const mdl = new User();
 
 mdl
-  .delete({
-    device_id: "new_insert_returning",
-    created_at: new Date(),
-    returning: true,
+  .select({
+    include: { role: true, role_aggregate: { _count: true } },
   })
   .then((res) => {
     console.log(res);

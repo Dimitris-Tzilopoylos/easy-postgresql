@@ -270,10 +270,8 @@ declare class DB {
   select({
     where,
     include,
-    aggregate,
     orderBy,
     select,
-    groupBy,
     distinct,
     limit,
     offset,
@@ -281,9 +279,7 @@ declare class DB {
   }?: {
     where?: any;
     include?: any;
-    aggregate?: any;
     orderBy?: any;
-    groupBy?: any;
     select?: any;
     distinct?: any;
     limit?: any;
@@ -293,10 +289,8 @@ declare class DB {
   selectOne({
     where,
     include,
-    aggregate,
     select,
     orderBy,
-    groupBy,
     distinct,
     extras,
   }?: {
