@@ -513,7 +513,7 @@ class DB {
         select,
         extras
       );
-
+      let hasInclude = false;
       const selectColumnsStr = [modelColumnsStr]
         .concat(
           Object.keys(include).map((alias, idx) => {
@@ -522,6 +522,7 @@ class DB {
             const relation = this.relations[_alias];
             const coalesceFallback = relation.type === "object" ? "null" : "[]";
             const coalesceAppendex = relation.type === "object" ? "->0" : "";
+            hasInclude = true;
             return `coalesce(json_agg(${this.makeDepthAlias(alias, 1 + idx)}${
               isAggregate ? `.${alias}` : ""
             })${coalesceAppendex},'${coalesceFallback}') as "${alias}"`;
@@ -561,15 +562,16 @@ class DB {
             );
           const { distinct, groupBy, orderBy, where, include, limit, offset } =
             DB.isObject(config) ? config : {};
+          let hasInclude = false;
           const selectColumnsStr = [modelColumnsStr]
             .concat(
-              Object.keys(include || {}).map(
-                (alias, idx) =>
-                  `coalesce(json_agg(${self.makeDepthAlias(
-                    alias,
-                    depth + 1 + idx
-                  )})${coalesceAppendex},'${coalesceFallback}') as ${alias}`
-              )
+              Object.keys(include || {}).map((alias, idx) => {
+                hasInclude = true;
+                return `coalesce(json_agg(${self.makeDepthAlias(
+                  alias,
+                  depth + 1 + idx
+                )})${coalesceAppendex},'${coalesceFallback}') as ${alias}`;
+              })
             )
             .join(",");
           if (isAggregate) {
@@ -621,8 +623,12 @@ class DB {
           if (!isAggregate) {
             sql += `
             ${appendSql}
-            where "${prevAlias}"."${relation.from_column}" = "${depthAlias}"."${relation.to_column}" ${whereClauseStr} 
-            group by ${modelColumnsStr} ${orderByStr} ${limitStr} ${offsetStr} ) ${depthAlias}  on true `;
+            where "${prevAlias}"."${relation.from_column}" = "${depthAlias}"."${
+              relation.to_column
+            }" ${whereClauseStr} 
+             ${
+               hasInclude ? `group by ${modelColumnsStr}` : ""
+             } ${orderByStr} ${limitStr} ${offsetStr} ) ${depthAlias}  on true `;
           } else {
             sql += ` ${appendSql} where "${prevAlias}"."${relation.from_column}" = "${depthAlias}"."${relation.to_column}" ${whereClauseStr}  )   ${depthAlias} on  true  `;
           }
@@ -654,7 +660,9 @@ class DB {
       args.push(...offsetArgs);
       index = idxOffset;
       sql += makeQuery(this, include, depth + 1, alias);
-      sql += ` ${whereClauseStr} group by ${modelColumnsStr} ${orderByStr} ${limitStr} ${offsetStr}   `;
+      sql += ` ${whereClauseStr}  ${
+        hasInclude ? `group by ${modelColumnsStr}` : ""
+      } ${orderByStr} ${limitStr} ${offsetStr}   `;
 
       sql += ` `;
       if (DB.enableLog) {

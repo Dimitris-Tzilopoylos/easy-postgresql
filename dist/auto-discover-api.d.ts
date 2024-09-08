@@ -90,6 +90,8 @@ declare class Postgres {
     delete: Model["delete"];
     aggregate: Model["aggregate"];
     withTransaction: Model["withTransaction"];
+    select: Model["select"];
+    selectOne: Model["selectOne"];
     instance: typeof Model;
   };
   enablePOSTGIS(value: boolean): void;
