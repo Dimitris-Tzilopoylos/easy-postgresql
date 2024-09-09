@@ -1956,7 +1956,7 @@ class DB {
         this.toOrderByByAggregationConfig({
           columnsMap: this.columns,
           aggregationKey: SupportedAggregations[key],
-          table,
+          table: this.table,
           schema: this.schema,
           whereClause,
           aggrKeyConfig: value,
