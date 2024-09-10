@@ -180,7 +180,7 @@ class DBManager {
       onUpdate
     )} ${DBManager.toForeignKeyAction("delete", onDelete)};`;
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      fromModel
     )} drop constraint ${name};`;
     await DB.pool.query(up);
     return {
@@ -211,7 +211,7 @@ class DBManager {
       onUpdate
     )} ${DBManager.toForeignKeyAction("delete", onDelete)};`;
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      fromModel
     )} drop constraint ${name};`;
     await DB.pool.query(up);
     return {
