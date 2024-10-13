@@ -68,112 +68,52 @@ declare class DB {
   static onSelect(
     schema: any,
     table: any,
-    cb: (
-      schema: string,
-      table: string,
-      namespace: string,
-      data: any,
-      model: DB
-    ) => Promise<void> | void
+    cb: (data: any, model: DB) => Promise<void> | void
   ): void;
   static onInsert(
     schema: any,
     table: any,
-    cb: (
-      schema: string,
-      table: string,
-      namespace: string,
-      data: any,
-      model: DB
-    ) => Promise<void> | void
+    cb: (data: any, model: DB) => Promise<void> | void
   ): void;
   static onUpdate(
     schema: any,
     table: any,
-    cb: (
-      schema: string,
-      table: string,
-      namespace: string,
-      data: any,
-      model: DB
-    ) => Promise<void> | void
+    cb: (data: any, model: DB) => Promise<void> | void
   ): void;
   static onDelete(
     schema: any,
     table: any,
-    cb: (
-      schema: string,
-      table: string,
-      namespace: string,
-      data: any,
-      model: DB
-    ) => Promise<void> | void
+    cb: (data: any, model: DB) => Promise<void> | void
   ): void;
   static onError(
     schema: any,
     table: any,
-    cb: (
-      schema: string,
-      table: string,
-      namespace: string,
-      error: any,
-      model: DB
-    ) => Promise<void> | void
+    cb: (error: any, model: DB) => Promise<void> | void
   ): void;
   static onSelectAsync(
     schema: any,
     table: any,
-    cb: (
-      schema: string,
-      table: string,
-      namespace: string,
-      data: any,
-      model: DB
-    ) => Promise<void>
+    cb: (data: any, model: DB) => Promise<void>
   ): void;
   static onInsertAsync(
     schema: any,
     table: any,
-    cb: (
-      schema: string,
-      table: string,
-      namespace: string,
-      data: any,
-      model: DB
-    ) => Promise<void>
+    cb: (data: any, model: DB) => Promise<void>
   ): void;
   static onUpdateAsync(
     schema: any,
     table: any,
-    cb: (
-      schema: string,
-      table: string,
-      namespace: string,
-      data: any,
-      model: DB
-    ) => Promise<void>
+    cb: (data: any, model: DB) => Promise<void>
   ): void;
   static onDeleteAsync(
     schema: any,
     table: any,
-    cb: (
-      schema: string,
-      table: string,
-      namespace: string,
-      data: any,
-      model: DB
-    ) => Promise<void>
+    cb: (data: any, model: DB) => Promise<void>
   ): void;
   static onErrorAsync(
     schema: any,
     table: any,
-    cb: (
-      schema: string,
-      table: string,
-      namespace: string,
-      error: any,
-      model: DB
-    ) => Promise<void>
+    cb: (error: any, model: DB) => Promise<void>
   ): void;
   static subscriber(
     event: any,
@@ -257,6 +197,7 @@ declare class DB {
     groupBy,
     distinct,
     extras,
+    asText,
   }?: {
     where?: any;
     include?: any;
@@ -266,6 +207,7 @@ declare class DB {
     select?: any;
     distinct?: any;
     extras?: { [key: string]: (x: string) => string };
+    asText?: boolean;
   }): Promise<any>;
   select({
     where,
@@ -276,6 +218,7 @@ declare class DB {
     limit,
     offset,
     extras,
+    asText,
   }?: {
     where?: any;
     include?: any;
@@ -285,6 +228,7 @@ declare class DB {
     limit?: any;
     offset?: any;
     extras?: { [key: string]: (x: string) => string };
+    asText?: boolean;
   }): Promise<any>;
   selectOne({
     where,
@@ -293,6 +237,7 @@ declare class DB {
     orderBy,
     distinct,
     extras,
+    asText,
   }?: {
     where?: any;
     include?: any;
@@ -302,6 +247,7 @@ declare class DB {
     select?: any;
     distinct?: any;
     extras?: { [key: string]: (x: string) => string };
+    asText?: boolean;
   }): Promise<any>;
   find({
     where,
@@ -314,6 +260,7 @@ declare class DB {
     limit,
     offset,
     extras,
+    asText,
   }?: {
     where?: any;
     include?: any;
@@ -325,6 +272,7 @@ declare class DB {
     limit?: any;
     offset?: any;
     extras?: { [key: string]: (x: string) => string };
+    asText?: boolean;
   }): Promise<any>;
   insert(args: any): Promise<any>;
   createTX(args: any): Promise<any>;

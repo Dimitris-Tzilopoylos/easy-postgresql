@@ -228,6 +228,7 @@ class DB {
     groupBy,
     distinct,
     extras,
+    asText,
   } = {}) {
     try {
       const [result] = await this.find({
@@ -240,6 +241,7 @@ class DB {
         select,
         limit: 1,
         extras,
+        asText,
       });
       return result;
     } catch (error) {
@@ -257,6 +259,7 @@ class DB {
     limit,
     offset,
     extras,
+    asText,
   } = {}) {
     try {
       let depth = 0;
@@ -275,7 +278,9 @@ class DB {
           )
         )
         .join(",");
-      let sql = `select coalesce(json_agg(${alias}),'[]') as ${this.table} 
+      let sql = `select coalesce(json_agg(${alias}),'[]')${
+        asText ? "::text" : ""
+      } as ${this.table} 
         from (
           select row_to_json((
             select ${alias}
