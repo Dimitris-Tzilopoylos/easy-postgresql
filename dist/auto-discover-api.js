@@ -257,9 +257,9 @@ class Postgres {
       update: instance.update.bind(instance),
       delete: instance.delete.bind(instance),
       withTransaction: instance.withTransaction.bind(instance),
-      aggregate: instance.aggregate.bind(this),
-      select: instance.select.bind(this),
-      selectOne: instance.selectOne.bind(this),
+      aggregate: instance.aggregate.bind(instance),
+      select: instance.select.bind(instance),
+      selectOne: instance.selectOne.bind(instance),
       instance,
     };
   }

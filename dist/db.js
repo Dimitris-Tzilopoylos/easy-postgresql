@@ -519,6 +519,7 @@ class DB {
         extras
       );
       let hasInclude = false;
+
       const selectColumnsStr = [modelColumnsStr]
         .concat(
           Object.keys(include).map((alias, idx) => {
