@@ -278,6 +278,7 @@ class Postgres {
     } catch (error) {
       if (connection) {
         connection.release();
+        connection = null;
       }
       throw error;
     } finally {

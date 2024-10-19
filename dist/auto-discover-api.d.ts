@@ -35,13 +35,7 @@ declare class Postgres {
   constructor({
     connectionConfig,
     relations,
-    options = {
-      createFiles: true,
-      skipIfDirectoryExists: true,
-      dirname: "easy-psql-models",
-      useESM: false,
-      extension: "js",
-    },
+    options,
   }: {
     connectionConfig: {
       host?: string;

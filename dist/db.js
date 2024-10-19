@@ -14,16 +14,16 @@ const {
   SELF_UPDATE_OPERATORS,
   EVENTS,
   REQUIRE_ARRAY_TRANSFORMATION,
+  forUpdateMapper,
+  IS_POSTGIS_OPERATOR,
+  POSTGIS_DISTANCE_COMPARISON_OPERATORS,
 } = require("./constants");
 const { Pool, types, Client } = require("pg");
 const Scheduler = require("./scheduler");
 const RawSQL = require("./raw");
-const { IS_POSTGIS_OPERATOR } = require("../constants");
-const { POSTGIS_DISTANCE_COMPARISON_OPERATORS } = require("./constants");
 const ValidationService = require("./validation");
 const SQL = require("./sql");
 const pg = require("pg");
-const { forUpdateMapper } = require("./constants");
 types.setTypeParser(types.builtins.INT8, (x) => {
   return x && DB.isString(x) && x.length > 16 ? x : parseInt(x);
 });
