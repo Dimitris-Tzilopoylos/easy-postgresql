@@ -745,6 +745,14 @@ const EVENTS = {
   DELETE: "delete",
   ERROR: "error",
 };
+const forUpdateMapper = {
+  for_update: "for update",
+  for_no_key_update: "for no key update",
+  for_share: "for share",
+  for_key_share: "for key share",
+  nowait: "for update nowait",
+  skip_locked: " for update skip locked",
+};
 module.exports = {
   POSTGRESQL,
   MYSQL,
@@ -770,4 +778,5 @@ module.exports = {
   EVENTS,
   IS_POSTGIS_OPERATOR,
   POSTGIS_DISTANCE_COMPARISON_OPERATORS,
+  forUpdateMapper,
 };

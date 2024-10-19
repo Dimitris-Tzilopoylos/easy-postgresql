@@ -23,6 +23,7 @@ const { POSTGIS_DISTANCE_COMPARISON_OPERATORS } = require("./constants");
 const ValidationService = require("./validation");
 const SQL = require("./sql");
 const pg = require("pg");
+const { forUpdateMapper } = require("./constants");
 types.setTypeParser(types.builtins.INT8, (x) => {
   return x && DB.isString(x) && x.length > 16 ? x : parseInt(x);
 });
@@ -229,6 +230,7 @@ class DB {
     distinct,
     extras,
     asText,
+    forUpdate,
   } = {}) {
     try {
       const [result] = await this.find({
@@ -242,6 +244,7 @@ class DB {
         limit: 1,
         extras,
         asText,
+        forUpdate,
       });
       return result;
     } catch (error) {
@@ -260,6 +263,7 @@ class DB {
     offset,
     extras,
     asText,
+    forUpdate,
   } = {}) {
     try {
       let depth = 0;
@@ -424,7 +428,9 @@ class DB {
       const [offsetStr, offsetArgs, idxOffset] = this.makeOffset(offset, index);
       args.push(...offsetArgs);
       index = idxOffset;
-      sql += ` ${whereClauseStr} ${groupByStr} ${orderByStr} ${limitStr} ${offsetStr} ) ${alias} `;
+      sql += ` ${whereClauseStr} ${groupByStr} ${orderByStr} ${limitStr} ${offsetStr} ${this.forUpdateResolve(
+        forUpdate
+      )}) ${alias} `;
       sql += makeQuery(this, include, depth + 1, alias);
       sql += ` ) ${alias}`;
       if (DB.enableLog) {
@@ -483,6 +489,8 @@ class DB {
     orderBy,
     distinct,
     extras,
+    asText,
+    forUpdate,
   } = {}) {
     try {
       const [result] = await this.select({
@@ -493,6 +501,8 @@ class DB {
         select,
         limit: 1,
         extras,
+        asText,
+        forUpdate,
       });
       return result;
     } catch (error) {
@@ -507,6 +517,8 @@ class DB {
     limit,
     offset,
     extras,
+    asText,
+    forUpdate,
   } = {}) {
     try {
       let depth = 0;
@@ -668,7 +680,9 @@ class DB {
       sql += makeQuery(this, include, depth + 1, alias);
       sql += ` ${whereClauseStr}  ${
         hasInclude ? `group by ${modelColumnsStr}` : ""
-      } ${orderByStr} ${limitStr} ${offsetStr}   `;
+      } ${orderByStr} ${limitStr} ${offsetStr}  ${this.forUpdateResolve(
+        forUpdate
+      )} `;
 
       sql += ` `;
       if (DB.enableLog) {
@@ -1999,6 +2013,17 @@ class DB {
   }
   makeDepthAlias(alias, depth) {
     return `_${depth}_${alias}`;
+  }
+  forUpdateResolve(forUpdate) {
+    if (!forUpdate) {
+      return "";
+    }
+
+    if (typeof forUpdate === "boolean") {
+      return "for update";
+    }
+
+    return forUpdateMapper[forUpdate] || "";
   }
   splitRelationalAndModelColumnsInput(args, allowedEntries = []) {
     return Object.entries(args).reduce(

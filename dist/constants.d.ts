@@ -282,6 +282,14 @@ export namespace EVENTS {
   let DELETE: string;
   let ERROR: string;
 }
+export namespace forUpdateMapper {
+  let for_update: "for update";
+  let for_no_key_update: "for no key update";
+  let for_share: "for share";
+  let for_key_share: "for key share";
+  let nowait: "for update nowait";
+  let skip_locked: " for update skip locked";
+}
 // export namespace IS_POSTGIS_OPERATOR {
 //   let _st_intersects: boolean;
 //   let _st_contains: boolean;

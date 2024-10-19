@@ -198,6 +198,7 @@ declare class DB {
     distinct,
     extras,
     asText,
+    forUpdate,
   }?: {
     where?: any;
     include?: any;
@@ -208,6 +209,14 @@ declare class DB {
     distinct?: any;
     extras?: { [key: string]: (x: string) => string };
     asText?: boolean;
+    forUpdate?:
+      | boolean
+      | "for_update"
+      | "for_no_key_update"
+      | "for_share"
+      | "for_key_share"
+      | "nowait"
+      | "skip_locked";
   }): Promise<any>;
   select({
     where,
@@ -219,6 +228,7 @@ declare class DB {
     offset,
     extras,
     asText,
+    forUpdate,
   }?: {
     where?: any;
     include?: any;
@@ -229,6 +239,14 @@ declare class DB {
     offset?: any;
     extras?: { [key: string]: (x: string) => string };
     asText?: boolean;
+    forUpdate?:
+      | boolean
+      | "for_update"
+      | "for_no_key_update"
+      | "for_share"
+      | "for_key_share"
+      | "nowait"
+      | "skip_locked";
   }): Promise<any>;
   selectOne({
     where,
@@ -238,6 +256,7 @@ declare class DB {
     distinct,
     extras,
     asText,
+    forUpdate,
   }?: {
     where?: any;
     include?: any;
@@ -248,6 +267,14 @@ declare class DB {
     distinct?: any;
     extras?: { [key: string]: (x: string) => string };
     asText?: boolean;
+    forUpdate?:
+      | boolean
+      | "for_update"
+      | "for_no_key_update"
+      | "for_share"
+      | "for_key_share"
+      | "nowait"
+      | "skip_locked";
   }): Promise<any>;
   find({
     where,
@@ -261,6 +288,7 @@ declare class DB {
     offset,
     extras,
     asText,
+    forUpdate,
   }?: {
     where?: any;
     include?: any;
@@ -273,6 +301,14 @@ declare class DB {
     offset?: any;
     extras?: { [key: string]: (x: string) => string };
     asText?: boolean;
+    forUpdate?:
+      | boolean
+      | "for_update"
+      | "for_no_key_update"
+      | "for_share"
+      | "for_key_share"
+      | "nowait"
+      | "skip_locked";
   }): Promise<any>;
   insert(args: any): Promise<any>;
   createTX(args: any): Promise<any>;
@@ -412,6 +448,16 @@ declare class DB {
   }): string[];
   makeColumnAlias(col: any): any;
   makeDepthAlias(alias: any, depth: any): string;
+  forUpdateResolve(
+    forUpdate?:
+      | boolean
+      | "for_update"
+      | "for_no_key_update"
+      | "for_share"
+      | "for_key_share"
+      | "nowait"
+      | "skip_locked"
+  ): string;
   splitRelationalAndModelColumnsInput(args: any, allowedEntries?: any[]): any;
   getModelColumnsCommaSeperatedString(
     alias: any,
