@@ -1,19 +1,19 @@
 // const { Model, DB, Column, Relation, SQL } = require("./dist");
 
 // DB.registerConnectionConfig({
-//   port: 5435,
+//   port: 5436,
 //   database: "postgres",
 //   host: "localhost",
 //   max: 10,
 //   min: 5,
 //   user: "postgres",
 //   password: "postgres",
-//   schema: "public",
+//   schema: "iec",
 // });
 
 // class User extends Model {
 //   constructor(conn) {
-//     super("users", conn, "public");
+//     super("users", conn, "iec");
 //   }
 
 //   columns = {
@@ -39,14 +39,14 @@
 //       to_table: "roles",
 //       to_column: "id",
 //       type: "object",
-//       schema: "public",
+//       schema: "iec",
 //     }),
 //   };
 // }
 
 // class Role extends Model {
 //   constructor(conn) {
-//     super("roles", conn, "public");
+//     super("roles", conn, "iec");
 //   }
 
 //   columns = {
@@ -68,7 +68,7 @@
 //       from_table: "roles",
 //       from_column: "id",
 //       type: "array",
-//       schema: "public",
+//       schema: "iec",
 //     }),
 //   };
 // }
@@ -112,8 +112,18 @@
 // const mdl = new User();
 
 // mdl
-//   .select({
-//     include: { role: true, role_aggregate: { _count: true } },
+//   .find({
+//     where: {
+//       _and: [{ id: { _is_not: null } }],
+//       role_aggregate: {
+//         _gte: { _min: { name: 9 } },
+//         where: {
+//           name: { _ilike: "operator" },
+//           id: { _eq: "4f797cbc-4e4e-4ad0-8ea0-5687c9b782fa" },
+//         },
+//       },
+//       name: { _ilike: "" },
+//     },
 //   })
 //   .then((res) => {
 //     console.log(res);

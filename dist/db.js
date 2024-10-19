@@ -1695,6 +1695,7 @@ class DB {
         const relation = model.relations[key];
         const currentModel = DB.getRelatedModel(relation);
         const newAlias = this.makeDepthAlias(relation.alias, depth);
+
         sql += ` ${getFirstEntry(isFirstEntry, binder)} ${alias}.${
           relation.from_column
         } in (select "${relation.to_column}" from "${
@@ -1715,8 +1716,50 @@ class DB {
         sql += ` ${qString} )`;
         args.push(...qArgs);
         index = idx;
+      } else if (DB.getIsAggregate(key)) {
+        const relationKey = DB.getRelationNameWithoutAggregate(key);
+        const relation = model.relations[relationKey];
+        const currentModel = DB.getRelatedModel(relation);
+        const newAlias = this.makeDepthAlias(relation.alias, depth);
+        const operator = Object.keys(config).find(
+          (k) => WHERE_CLAUSE_OPERATORS[k]
+        );
+        if (!WHERE_CLAUSE_OPERATORS[operator]) {
+          throw new Error("invalid comparison operator");
+        }
+        const [aggregationKey, colConfig] = Object.entries(config[operator])[0];
+
+        const [rawColumnKey, value] = Object.entries(colConfig)[0];
+        const aggregationSQLOperation = SupportedAggregations[aggregationKey];
+        if (!aggregationSQLOperation) {
+          throw new Error(`unsupported aggregation ${aggregationKey}`);
+        }
+        const aggregationColumn =
+          aggregationKey === "_count" ? `*` : rawColumnKey;
+
+        sql += ` ${getFirstEntry(
+          isFirstEntry,
+          binder
+        )} (select ${aggregationSQLOperation}(${aggregationColumn}) from "${
+          currentModel.schema || DB.database
+        }"."${currentModel.table}" ${newAlias} where "${alias}"."${
+          relation.from_column
+        }" = "${newAlias}"."${relation.to_column}"`;
+        const [qString, qArgs, idx] = currentModel.makeWhereClause(
+          currentModel,
+          config?.where,
+          index,
+          newAlias,
+          false,
+          false,
+          binder,
+          depth + 1
+        );
+        sql += ` ${qString} )  ${WHERE_CLAUSE_OPERATORS[operator]} $${idx}`;
+        args.push(...qArgs, value);
+        index = idx + 1;
       } else {
-        throw new Error("UNKNOWN OPERATION");
+        throw new Error(`UNKNOWN OPERATION ${key} `);
       }
       isFirstEntry = false;
     }
