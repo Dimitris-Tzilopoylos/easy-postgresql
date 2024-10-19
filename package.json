@@ -1,9 +1,13 @@
 {
   "name": "test-easy-psql",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist/",
+    "Readme.md"
+  ],
   "exports": {
     ".": {
       "import": "./dist/index.js",
