@@ -1729,13 +1729,15 @@ class DB {
         }
         const [aggregationKey, colConfig] = Object.entries(config[operator])[0];
 
-        const [rawColumnKey, value] = Object.entries(colConfig)[0];
+        const [rawColumnKey, value] =
+          aggregationKey === "_count"
+            ? ["*", colConfig]
+            : Object.entries(colConfig)[0];
         const aggregationSQLOperation = SupportedAggregations[aggregationKey];
         if (!aggregationSQLOperation) {
           throw new Error(`unsupported aggregation ${aggregationKey}`);
         }
-        const aggregationColumn =
-          aggregationKey === "_count" ? `*` : rawColumnKey;
+        const aggregationColumn = rawColumnKey;
 
         sql += ` ${getFirstEntry(
           isFirstEntry,

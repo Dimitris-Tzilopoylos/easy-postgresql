@@ -1,0 +1,6 @@
+node_modules
+new-dist/*
+models/*
+.babelrc
+.gitignore
+test.js
