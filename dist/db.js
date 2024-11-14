@@ -1696,11 +1696,11 @@ class DB {
         const currentModel = DB.getRelatedModel(relation);
         const newAlias = this.makeDepthAlias(relation.alias, depth);
 
-        sql += ` ${getFirstEntry(isFirstEntry, binder)} ${alias}.${
-          relation.from_column
-        } in (select "${relation.to_column}" from "${
-          currentModel.schema || DB.database
-        }"."${currentModel.table}" ${newAlias} where "${alias}"."${
+        sql += ` ${getFirstEntry(isFirstEntry, binder)} exists (select "${
+          relation.to_column
+        }" from "${currentModel.schema || DB.database}"."${
+          currentModel.table
+        }" ${newAlias} where "${alias}"."${
           relation.from_column
         }" = "${newAlias}"."${relation.to_column}"`;
         const [qString, qArgs, idx] = currentModel.makeWhereClause(
