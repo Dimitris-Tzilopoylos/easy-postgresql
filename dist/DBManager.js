@@ -95,11 +95,11 @@ class DBManager {
       // }
     }
 
-    if (column?.check) {
-      if (Array.isArray(column?.check)) {
-        sql += ` CHECK (${column?.check.join(",")})`;
+    if (column?.checks) {
+      if (Array.isArray(column?.checks)) {
+        sql += ` CHECK (${column?.checks.join(",")})`;
       } else {
-        ` CHECK (${column?.check})`;
+        ` CHECK (${column?.checks})`;
       }
     }
     return sql;
