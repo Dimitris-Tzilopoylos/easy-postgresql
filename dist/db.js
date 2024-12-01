@@ -2461,7 +2461,7 @@ class DB {
     if (!handlers?.length) {
       return null;
     }
-    await Promise.all(handlers(data, instance));
+    await Promise.all(handlers.map((h) => h(data, instance)));
   }
   static eventExists(schema, table, namespace) {
     return !!DB.events?.[namespace]?.[schema]?.[table];
