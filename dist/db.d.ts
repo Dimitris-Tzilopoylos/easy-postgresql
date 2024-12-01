@@ -49,6 +49,9 @@ declare class DB {
   static asyncEvents: {
     [x: string]: any;
   };
+  static actions: {
+    [x: string]: any;
+  };
   static hasReplicas(): any;
   static roundRobinReplicaPoolRetrieval(): any;
   static connectClient(): Promise<void>;
@@ -115,6 +118,11 @@ declare class DB {
     table: any,
     cb: (error: any, model: DB) => Promise<void>
   ): void;
+  static onSelectActionAsync(cb: (data: any, model: DB) => Promise<void>): void;
+  static onInsertActionAsync(cb: (data: any, model: DB) => Promise<void>): void;
+  static onUpdateActionAsync(cb: (data: any, model: DB) => Promise<void>): void;
+  static onDeleteActionAsync(cb: (data: any, model: DB) => Promise<void>): void;
+  static onErrorActionAsync(cb: (error: any, model: DB) => Promise<void>): void;
   static subscriber(
     event: any,
     cb: any
@@ -138,8 +146,14 @@ declare class DB {
     data: any,
     instance: any
   ): Promise<any>;
+  static executeAsynAction(
+    namespace: any,
+    data: any,
+    instance: any
+  ): Promise<any>;
   static eventExists(schema: any, table: any, namespace: any): boolean;
   static asyncEventExists(schema: any, table: any, namespace: any): boolean;
+  static asyncActionExists(namespace: any): boolean;
   static paginator(
     page: any,
     view: any,

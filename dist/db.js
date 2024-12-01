@@ -80,6 +80,13 @@ class DB {
     [EVENTS.DELETE]: {},
     [EVENTS.ERROR]: {},
   };
+  static actions = {
+    [EVENTS.SELECT]: [],
+    [EVENTS.INSERT]: [],
+    [EVENTS.UPDATE]: [],
+    [EVENTS.DELETE]: [],
+    [EVENTS.ERROR]: [],
+  };
 
   constructor(table, connection = null, schema = "public") {
     this.table = table;
@@ -457,6 +464,9 @@ class DB {
           this
         );
       }
+      if (DB.asyncActionExists(DB.EventNameSpaces.SELECT)) {
+        await DB.executeAsyncAction(DB.EventNameSpaces.SELECT, result, this);
+      }
       return result;
     } catch (error) {
       if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)) {
@@ -478,6 +488,9 @@ class DB {
           error,
           this
         );
+      }
+      if (DB.asyncActionExists(DB.EventNameSpaces.ERROR)) {
+        await DB.executeAsyncAction(DB.EventNameSpaces.ERROR, error, this);
       }
       throw error;
     }
@@ -713,6 +726,9 @@ class DB {
           this
         );
       }
+      if (DB.asyncActionExists(DB.EventNameSpaces.SELECT)) {
+        await DB.executeAsyncAction(DB.EventNameSpaces.SELECT, result, this);
+      }
       return result;
     } catch (error) {
       if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)) {
@@ -734,6 +750,9 @@ class DB {
           error,
           this
         );
+      }
+      if (DB.asyncActionExists(DB.EventNameSpaces.ERROR)) {
+        await DB.executeAsyncAction(DB.EventNameSpaces.ERROR, error, this);
       }
       throw error;
     }
@@ -862,6 +881,9 @@ class DB {
           this
         );
       }
+      if (DB.asyncActionExists(DB.EventNameSpaces.INSERT)) {
+        await DB.executeAsyncAction(DB.EventNameSpaces.INSERT, result, this);
+      }
       return result;
     } catch (error) {
       this.disconnect();
@@ -884,6 +906,9 @@ class DB {
           error,
           this
         );
+      }
+      if (DB.asyncActionExists(DB.EventNameSpaces.ERROR)) {
+        await DB.executeAsyncAction(DB.EventNameSpaces.ERROR, error, this);
       }
       throw error;
     }
@@ -919,6 +944,9 @@ class DB {
           this
         );
       }
+      if (DB.asyncActionExists(DB.EventNameSpaces.INSERT)) {
+        await DB.executeAsyncAction(DB.EventNameSpaces.INSERT, result, this);
+      }
       return result;
     } catch (error) {
       this.disconnect();
@@ -941,6 +969,9 @@ class DB {
           error,
           this
         );
+      }
+      if (DB.asyncActionExists(DB.EventNameSpaces.ERROR)) {
+        await DB.executeAsyncAction(DB.EventNameSpaces.ERROR, error, this);
       }
       throw error;
     }
@@ -968,6 +999,9 @@ class DB {
           this
         );
       }
+      if (DB.asyncActionExists(DB.EventNameSpaces.INSERT)) {
+        await DB.executeAsyncAction(DB.EventNameSpaces.INSERT, result, this);
+      }
       return result;
     } catch (error) {
       if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)) {
@@ -989,6 +1023,9 @@ class DB {
           error,
           this
         );
+      }
+      if (DB.asyncActionExists(DB.EventNameSpaces.ERROR)) {
+        await DB.executeAsyncAction(DB.EventNameSpaces.ERROR, error, this);
       }
       throw error;
     }
@@ -1020,6 +1057,9 @@ class DB {
           this
         );
       }
+      if (DB.asyncActionExists(DB.EventNameSpaces.INSERT)) {
+        await DB.executeAsyncAction(DB.EventNameSpaces.INSERT, result, this);
+      }
       return result;
     } catch (error) {
       if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)) {
@@ -1041,6 +1081,9 @@ class DB {
           error,
           this
         );
+      }
+      if (DB.asyncActionExists(DB.EventNameSpaces.ERROR)) {
+        await DB.executeAsyncAction(DB.EventNameSpaces.ERROR, error, this);
       }
       throw error;
     }
@@ -1144,6 +1187,9 @@ class DB {
           this
         );
       }
+      if (DB.asyncActionExists(DB.EventNameSpaces.UPDATE)) {
+        await DB.executeAsyncAction(DB.EventNameSpaces.UPDATE, result, this);
+      }
       return result;
     } catch (error) {
       if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)) {
@@ -1165,6 +1211,9 @@ class DB {
           error,
           this
         );
+      }
+      if (DB.asyncActionExists(DB.EventNameSpaces.ERROR)) {
+        await DB.executeAsyncAction(DB.EventNameSpaces.ERROR, error, this);
       }
       throw error;
     }
@@ -1206,6 +1255,9 @@ class DB {
           this
         );
       }
+      if (DB.asyncActionExists(DB.EventNameSpaces.DELETE)) {
+        await DB.executeAsyncAction(DB.EventNameSpaces.DELETE, result, this);
+      }
       return result;
     } catch (error) {
       if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)) {
@@ -1227,6 +1279,9 @@ class DB {
           error,
           this
         );
+      }
+      if (DB.asyncActionExists(DB.EventNameSpaces.ERROR)) {
+        await DB.executeAsyncAction(DB.EventNameSpaces.ERROR, error, this);
       }
       throw error;
     }
@@ -2267,6 +2322,51 @@ class DB {
     }
     DB.asyncEvents[DB.EventNameSpaces.ERROR][schema][table] = cb;
   }
+  static onSelectActionAsync(cb) {
+    if (!Array.isArray(DB.actions[DB.EventNameSpaces.SELECT])) {
+      DB.actions[DB.EventNameSpaces.SELECT] = [];
+    }
+
+    if (typeof cb === "function") {
+      DB.actions[DB.EventNameSpaces.SELECT].push(cb);
+    }
+  }
+  static onInsertActionAsync(cb) {
+    if (!Array.isArray(DB.actions[DB.EventNameSpaces.INSERT])) {
+      DB.actions[DB.EventNameSpaces.INSERT] = [];
+    }
+
+    if (typeof cb === "function") {
+      DB.actions[DB.EventNameSpaces.INSERT].push(cb);
+    }
+  }
+  static onUpdateActionAsync(cb) {
+    if (!Array.isArray(DB.actions[DB.EventNameSpaces.UPDATE])) {
+      DB.actions[DB.EventNameSpaces.UPDATE] = [];
+    }
+
+    if (typeof cb === "function") {
+      DB.actions[DB.EventNameSpaces.UPDATE].push(cb);
+    }
+  }
+  static onDeleteActionAsync(cb) {
+    if (!Array.isArray(DB.actions[DB.EventNameSpaces.DELETE])) {
+      DB.actions[DB.EventNameSpaces.DELETE] = [];
+    }
+
+    if (typeof cb === "function") {
+      DB.actions[DB.EventNameSpaces.DELETE].push(cb);
+    }
+  }
+  static onErrorActionAsync(cb) {
+    if (!Array.isArray(DB.actions[DB.EventNameSpaces.ERROR])) {
+      DB.actions[DB.EventNameSpaces.ERROR] = [];
+    }
+
+    if (typeof cb === "function") {
+      DB.actions[DB.EventNameSpaces.ERROR].push(cb);
+    }
+  }
   static subscriber(event, cb) {
     try {
       return DB.connectClient()
@@ -2356,11 +2456,22 @@ class DB {
     }
     await handler(data, instance);
   }
+  static async executeAsyncAction(namespace, data, instance) {
+    const handlers = DB.actions?.[namespace];
+    if (!handlers?.length) {
+      return null;
+    }
+    await Promise.all(handlers(data, instance));
+  }
   static eventExists(schema, table, namespace) {
     return !!DB.events?.[namespace]?.[schema]?.[table];
   }
   static asyncEventExists(schema, table, namespace) {
     return !!DB.asyncEvents[namespace]?.[schema]?.[table];
+  }
+  static asyncActionExists(namespace) {
+    const ns = DB.actions[namespace];
+    return Array.isArray(ns) && ns.length > 0;
   }
   static paginator(page, view, total) {
     page = +page;
