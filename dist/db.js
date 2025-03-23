@@ -346,7 +346,7 @@ class DB {
           if (isAggregate) {
             const [agg] = currentModel.aggregateInternal({
               ...config,
-              where: currentModel.mergeRelationalWhere(
+              where: currentModel._mergeRelationalWhere(
                 config.where || {},
                 relation.where || {}
               ),
@@ -381,7 +381,7 @@ class DB {
           );
           const [whereClauseStr, qArgs, idx] = currentModel.makeWhereClause(
             currentModel,
-            currentModel.mergeRelationalWhere(
+            currentModel._mergeRelationalWhere(
               where || {},
               relation.where || {}
             ),
