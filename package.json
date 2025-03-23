@@ -1,6 +1,6 @@
 {
   "name": "test-easy-psql",
-  "version": "0.0.31",
+  "version": "0.0.32",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -33,7 +33,13 @@
     "webpack": "^5.88.2",
     "webpack-cli": "^5.1.4"
   },
-  "keywords": [],
+  "keywords": [
+    "postgres",
+    "pg",
+    "orm",
+    "eager loading",
+    "sql"
+  ],
   "author": "DimTzilop",
   "license": "ISC"
 }
