@@ -8,19 +8,21 @@ declare class Relation {
     to_column,
     type,
   }: {
-    alias: any;
-    from_table: any;
-    to_table: any;
-    from_column: any;
-    to_column: any;
+    alias: string;
+    from_table?: string;
+    to_table: string;
+    from_column: string;
+    to_column: string;
     type: "object" | "array";
-    schema?: any;
+    schema?: string;
+    where?: any;
   });
-  alias: any;
-  from_table: any;
-  to_table: any;
-  from_column: any;
-  to_column: any;
-  type: any;
+  alias: string;
+  from_table?: string;
+  to_table: string;
+  from_column: string;
+  to_column: string;
+  type: "object" | "array";
   schema?: any;
+  where?: any;
 }

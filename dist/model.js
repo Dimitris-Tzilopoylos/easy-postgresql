@@ -9,6 +9,7 @@ class Model extends DB {
     this.schema = schema;
     this.relations = {};
     this.columns = {};
+    this.context = {};
     this.isAggregate = false;
   }
   getModelColumnsCommaSeperatedString(alias, select, extras) {
@@ -42,6 +43,28 @@ class Model extends DB {
       .map((c) => `"${alias ? alias : this.table}"."${c.column}"`)
       .join(",");
   }
+  _mergeRelationalWhere(where, otherWhere) {
+    return { ...where, ...otherWhere };
+  }
+
+  setContextValue(key, value) {
+    this.context[key] = value;
+  }
+
+  getContextValue(key) {
+    return this.context[key];
+  }
+
+  deleteContextValue(key) {
+    const value = this.getContextValue(key);
+    delete this.context[key];
+    return value;
+  }
+
+  clearContext() {
+    this.context = {};
+  }
+
   get columnsStrNoAlias() {
     return Object.values(this.columns)
       .map((c) => `${c.column}`)

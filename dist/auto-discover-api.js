@@ -136,11 +136,11 @@ class Postgres {
           }${relation}: new Relation({\n\t\t\t\talias: "${
             config.alias
           }",\n\t\t\t\ttype: "${config.type.toLowerCase()}",\n\t\t\t\tfrom_table: "${
-            config.from_table
+            config.from_table || instance.table
           }",\n\t\t\t\tschema: "${
             config.schema || "public"
           }",\n\t\t\t\tfrom_table: "${
-            config.from_table
+            config.from_table || instance.table
           }",\n\t\t\t\tfrom_column: "${
             config.from_column
           }",\n\t\t\t\tto_table: "${config.to_table}",\n\t\t\t\tto_column: "${
@@ -193,7 +193,7 @@ class Postgres {
     const relations = (foreignKeys || []).reduce((acc, fk) => {
       acc[fk.referenced_table] = new Relation({
         alias: fk.referenced_table,
-        from_table: fk.column_table,
+        from_table: fk.column_table || table,
         from_column: fk.column_name,
         to_table: fk.referenced_table,
         to_column: fk.referenced_column,
@@ -212,7 +212,7 @@ class Postgres {
         } else {
           acc[r.alias] = new Relation({
             alias: r.alias,
-            from_table: r.from_table,
+            from_table: r.from_table || table,
             from_column: r.from_column,
             to_table: r.to_table,
             to_column: r.to_column,

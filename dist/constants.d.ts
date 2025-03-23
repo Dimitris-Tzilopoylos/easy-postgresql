@@ -32,6 +32,8 @@ export namespace WHERE_CLAUSE_OPERATORS {
   let _is_not: string;
   let _like: string;
   let _ilike: string;
+  let _nlike: string;
+  let _nilike: string;
   let _eq: string;
   let _neq: string;
   let _st_intersects: string;

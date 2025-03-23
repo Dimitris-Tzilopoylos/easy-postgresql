@@ -316,7 +316,7 @@ class DB {
           const isAggregate = DB.getIsAggregate(_alias);
           const relation = model.relations[alias];
           if (!relation) {
-            throw new Error("no such relation");
+            throw new Error(`no such relation: ${alias}`);
           }
           const currentModel = DB.getRelatedModel(relation);
           if (!currentModel) {
@@ -346,6 +346,10 @@ class DB {
           if (isAggregate) {
             const [agg] = currentModel.aggregateInternal({
               ...config,
+              where: currentModel.mergeRelationalWhere(
+                config.where || {},
+                relation.where || {}
+              ),
               alias: depthAlias,
               relationAlias: relation.alias,
             });
@@ -377,7 +381,10 @@ class DB {
           );
           const [whereClauseStr, qArgs, idx] = currentModel.makeWhereClause(
             currentModel,
-            where,
+            currentModel.mergeRelationalWhere(
+              where || {},
+              relation.where || {}
+            ),
             index,
             depthAlias,
             false,
@@ -1740,7 +1747,7 @@ class DB {
           newAlias,
           false,
           false,
-          binder,
+          "and", // change over here due to relational or chaining
           depth + 1
         );
         sql += ` ${qString} )`;
@@ -1765,7 +1772,7 @@ class DB {
           newAlias,
           false,
           false,
-          binder,
+          "and", // change over here due to relational or chaining
           depth + 1
         );
         sql += ` ${qString} )`;
@@ -1809,7 +1816,7 @@ class DB {
           newAlias,
           false,
           false,
-          binder,
+          "and", // change over here due to relational or chaining
           depth + 1
         );
         sql += ` ${qString} )  ${WHERE_CLAUSE_OPERATORS[operator]} $${idx}`;

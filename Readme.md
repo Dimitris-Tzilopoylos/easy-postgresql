@@ -1,4 +1,4 @@
-<!-- # easy-psql
+# easy-psql
 
 ## Description
 
@@ -484,4 +484,4 @@ const run = async () => {
 
 run();
 
-``` -->
+```

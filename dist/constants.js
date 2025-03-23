@@ -30,6 +30,8 @@ const WHERE_CLAUSE_OPERATORS = {
   _is_not: " is not ",
   _like: " like ",
   _ilike: " ilike ",
+  _nlike: " not like ",
+  _nilike: " not ilike ",
   _eq: " = ",
   _neq: " <> ",
   ...(IS_POSTGRES && {

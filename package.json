@@ -1,6 +1,6 @@
 {
   "name": "test-easy-psql",
-  "version": "0.0.28",
+  "version": "0.0.29",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "easy-pg-scanner": "^1.0.3",
-    "pg": "^8.1.0",
+    "pg": "^8.14.1",
     "prompt-sync": "^4.2.0",
     "uuid": "^9.0.0"
   },

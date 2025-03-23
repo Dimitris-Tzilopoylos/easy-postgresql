@@ -9,6 +9,7 @@ class Relation {
     to_column,
     type,
     schema,
+    where,
   }) {
     this.alias = alias;
     this.from_table = from_table;
@@ -17,6 +18,13 @@ class Relation {
     this.to_column = to_column;
     this.type = type;
     this.schema = schema || "public";
+    this.where =
+      !!where &&
+      typeof where === "object" &&
+      !Array.isArray(where) &&
+      !(where instanceof Date)
+        ? where
+        : {};
   }
 }
 module.exports = Relation;
