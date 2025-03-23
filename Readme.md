@@ -1,24 +1,24 @@
-# easy-psql
+# test-easy-psql
 
 ## Description
 
-Welcome to the easy-psql documentation! easy-psql is a simple intermediary for querying data in PostgreSQL databases. Whether you're a beginner or an experienced developer, this documentation will help you get started with easy-psql and leverage its capabilities to interact with your PostgreSQL databases efficiently.
+Welcome to the test-easy-psql documentation! test-easy-psql is a simple intermediary for querying data in PostgreSQL databases. Whether you're a beginner or an experienced developer, this documentation will help you get started with test-easy-psql and leverage its capabilities to interact with your PostgreSQL databases efficiently.
 
 **Note:** This package is intended for personal usage, and no tests have been written for it. Therefore, it is recommended to use it with caution and at your own responsibility. Like any software, there may be unforeseen bugs or issues that could affect your application. It is advisable to thoroughly review the package's functionality and integrate it into your projects with careful consideration of potential risks.
 (This package was developed using nodejs 16)
 
 ## Installation
 
-To install easy-psql, you can use npm:
+To install test-easy-psql, you can use npm:
 
 ```bash
-npm install easy-psql
+npm install test-easy-psql
 ```
 
 ## Establishing Connection with PostgreSQL Database
 
 ```javascript
-const { DB } = require("easy-psql");
+const { DB } = require("test-easy-psql");
 
 DB.registerConnectionConfig({
   user: "postgres",
@@ -27,17 +27,19 @@ DB.registerConnectionConfig({
   password: "postgres",
   port: 5432,
   host: "localhost",
+  min: 5, // pool size limits
+  max: 10, // pool size limits
 });
 ```
 
 ## Defining Models and Relations for PostgreSQL Database
 
 ```javascript
-const { Model, Column } = require("easy-psql");
+const { Model, Column, Relation } = require("test-easy-psql");
 
 class Role extends Model {
   constructor(connection) {
-    super("roles", connection);
+    super("roles", connection, "public" /* defaults to public */);
   }
 
   columns = {
@@ -95,7 +97,8 @@ class User extends Model {
       from_column: "role_id",
       to_table: "roles",
       to_column: "id",
-      alias: "object", // object or array
+      alias: "role",
+      type: "object", // object or array
     }),
   };
 }
@@ -212,7 +215,7 @@ const data = await model.find({where:{...},distinct:[...],groupBy:[...],limit:10
 ## Using nested aggregations
 
 ```javascript
-const { Model, Column } = require("easy-psql");
+const { Model, Column } = require("test-easy-psql");
 
 class Role extends Model {
   constructor(connection) {
@@ -234,12 +237,13 @@ class Role extends Model {
   };
 
   relations = {
-    role: new Relation({
+    users: new Relation({
       from_table: "roles",
       from_column: "id",
       to_table: "users",
       to_column: "role_id",
-      alias: "array", // object or array
+      alias: "users",
+      type: "array", // object or array
     }),
   };
 }
@@ -280,11 +284,13 @@ class User extends Model {
 
   relations = {
     role: new Relation({
+      schema: "public", // refers to the schema of the referenced table. In this example it is "roles"
       from_table: "users",
       from_column: "role_id",
       to_table: "roles",
       to_column: "id",
-      alias: "object", // object or array
+      alias: "role",
+      type: "object", // object or array
     }),
   };
 }
@@ -371,7 +377,7 @@ const result = await model.withTransaction(async (tx) => {
     throw new Error("User not created");
   }
 
-  const roleModel = new Role(tx); // pass the tx -> connection to postgres otherwise this operation is not be atomic
+  const roleModel = new Role(tx); // pass the tx -> connection to postgres otherwise this operation is not atomic
 
   const roleData = await role.create({ name: "testRole" });
   if (!roleData) {
@@ -436,10 +442,36 @@ DB.onErrorAsync("users", async (error, instance) => {
 });
 ```
 
+## More generic with actions
+
+```javascript
+// The following actions will be triggered only by using the model classes
+
+// e.g : find and findOne  on model User -> will trigger onSelectActionAsync but DB.pool.query('select * from users'); will not!
+
+// Not like effects, you can register many actions of same type e.g Selection Actions and they are going to be executed using Promise.all in the end of each operation find,findOne,create,createTX,createMany,createManyTX,update,delete.
+
+DB.onSelectActionAsync(async (data, instance) => {
+  // ...
+});
+DB.onInsertActionAsync(async (data, instance) => {
+  // ...
+});
+DB.onUpdateActionAsync(async (data, instance) => {
+  // ...
+});
+DB.onDeleteActionAsync(async (data, instance) => {
+  // ...
+});
+DB.onErrorActionAsync(async (error, instance) => {
+  // ...
+});
+```
+
 ## AutoDiscoverAPI
 
 ```javascript
-const { Postgres, Relation } = require('easy-psql');
+const { Postgres, Relation } = require('test-easy-psql');
 
 const db = new Postgres({
   connectionConfig: {
@@ -454,7 +486,7 @@ const db = new Postgres({
   options: {
       createFiles: false, // create files for the models
       skipIfDirectoryExists: true, // skip files' creation if the specified folder already exists
-      dirname: "easy-psql-models", // folder name to create model files
+      dirname: "test-easy-psql-models", // folder name to create model files
       useESM: false, // true -> use exports / false -> require
       extension: "js", // can be js,ts or mjs
   }
@@ -475,7 +507,7 @@ const postgres = require('./path-of-the-file-above');
 
 const run = async () => {
   const db = await postgres();
-
+  // db.model(table_name,connection,schema)
   const data = await db.model('my-table').find({...}); //same api as the functions in the other examples
 
   return data; // ([{...},{...}])
