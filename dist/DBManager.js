@@ -6,25 +6,25 @@ const prompt = require("prompt-sync")({
   sigint: true,
 });
 class DBManager {
-  static async createSchema(schemaName = DB.database) {
+  static async createSchema(schemaName, connection) {
     const up = `create schema if not exists ${schemaName};`;
     const down = `drop schema if exists ${schemaName} cascade;`;
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,
     };
   }
-  static async dropSchema(schemaName = DB.database) {
+  static async dropSchema(schemaName, connection) {
     const up = `drop schema if exists ${schemaName} cascade;`;
     const down = `create schema if not exists ${schemaName};`;
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,
     };
   }
-  static async dropTable(model) {
+  static async dropTable(model, connection) {
     const up = `drop table if exists ${model?.schema || DB.database}.${
       model.table
     } cascade;`;
@@ -33,13 +33,13 @@ class DBManager {
     } (
             ${DBManager.modelColumnstoSql(model)}
         );`;
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,
     };
   }
-  static async createTable(model) {
+  static async createTable(model, connection) {
     const up = `create table if not exists ${model?.schema || DB.database}.${
       model.table
     } (
@@ -48,7 +48,7 @@ class DBManager {
     const down = `drop table if exists ${model?.schema || DB.database}.${
       model.table
     } cascade;`;
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,
@@ -105,6 +105,7 @@ class DBManager {
     return sql;
   }
   static createIndexes(model) {
+    throw new Error("Not implemented");
     let up = ``;
     const primaryIndexes = Object.entries(model?.indexes?.primary || {});
     const foreignIndexes = Object.entries(model?.indexes?.foreign || {});
@@ -114,8 +115,8 @@ class DBManager {
         up = `ALTER TABLE ${DB.database}.${model.table} ALTER column ${model} `;
     }
   }
-  static async exec(sql, args = []) {
-    await DB.pool.query(sql, args);
+  static async exec(sql, args = [], connection) {
+    await (connection || DB.pool).query(sql, args);
   }
   static async runBash(depth = 0) {
     if (depth === 0) {
@@ -129,7 +130,7 @@ class DBManager {
     await DBManager.exec(sql);
     DBManager.runBash(depth + 1);
   }
-  static async createPrimaryKey(model, name, columns) {
+  static async createPrimaryKey(model, name, columns, connection) {
     const fColumns = DBManager.formatConstraintOrIndexColumns(columns);
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
       model
@@ -137,13 +138,13 @@ class DBManager {
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
       model
     )} drop constraint ${name};`;
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,
     };
   }
-  static async dropPrimaryKey(model, name, columns) {
+  static async dropPrimaryKey(model, name, columns, connection) {
     const fColumns = DBManager.formatConstraintOrIndexColumns(columns);
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
       model
@@ -151,7 +152,7 @@ class DBManager {
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
       model
     )} drop constraint ${name};`;
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,
@@ -164,7 +165,8 @@ class DBManager {
     fromColumns,
     toColumns,
     onUpdate,
-    onDelete
+    onDelete,
+    connection
   ) {
     const fColumns = DBManager.formatConstraintOrIndexColumns(fromColumns);
     const tColumns = DBManager.formatConstraintOrIndexColumns(toColumns);
@@ -182,7 +184,7 @@ class DBManager {
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
       fromModel
     )} drop constraint ${name};`;
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,
@@ -195,7 +197,8 @@ class DBManager {
     fromColumns,
     toColumns,
     onUpdate,
-    onDelete
+    onDelete,
+    connection
   ) {
     const fColumns = DBManager.formatConstraintOrIndexColumns(fromColumns);
     const tColumns = DBManager.formatConstraintOrIndexColumns(toColumns);
@@ -213,13 +216,13 @@ class DBManager {
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
       fromModel
     )} drop constraint ${name};`;
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,
     };
   }
-  static async createUniqueConstraint(model, name, columns) {
+  static async createUniqueConstraint(model, name, columns, connection) {
     const fColumns = DBManager.formatConstraintOrIndexColumns(columns);
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
       model
@@ -227,13 +230,13 @@ class DBManager {
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
       model
     )} drop constraint ${name};`;
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,
     };
   }
-  static async dropUniqueConstraint(model, name, columns) {
+  static async dropUniqueConstraint(model, name, columns, connection) {
     const fColumns = DBManager.formatConstraintOrIndexColumns(columns);
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
       model
@@ -241,13 +244,13 @@ class DBManager {
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
       model
     )} drop constraint ${name};`;
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,
     };
   }
-  static async createUniqueIndex(model, name, columns) {
+  static async createUniqueIndex(model, name, columns, connection) {
     const fColumns = DBManager.formatConstraintOrIndexColumns(columns);
     const up = `create unique index ${name} on ${DBManager.toModelSchemaTableAlias(
       model
@@ -255,13 +258,13 @@ class DBManager {
     const down = `drop index ${
       model?.schema ? `"${model.schema}".` : ""
     }${name};`;
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,
     };
   }
-  static async dropUniqueIndex(model, name, columns) {
+  static async dropUniqueIndex(model, name, columns, connection) {
     const fColumns = DBManager.formatConstraintOrIndexColumns(columns);
     const down = `create unique index ${name} on ${DBManager.toModelSchemaTableAlias(
       model
@@ -269,13 +272,13 @@ class DBManager {
     const up = `drop index ${
       model?.schema ? `"${model.schema}".` : ""
     }${name};`;
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,
     };
   }
-  static async createIndex(model, name, columns, type) {
+  static async createIndex(model, name, columns, type, connection) {
     const fColumns = DBManager.formatConstraintOrIndexColumns(columns);
     const up = `create index ${name} on ${DBManager.toModelSchemaTableAlias(
       model
@@ -283,13 +286,13 @@ class DBManager {
     const down = `drop index ${
       model?.schema ? `"${model.schema}".` : ""
     }${name};`;
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,
     };
   }
-  static async dropIndex(model, name, columns, type) {
+  static async dropIndex(model, name, columns, type, connection) {
     const fColumns = DBManager.formatConstraintOrIndexColumns(columns);
     const down = `create index ${name} on ${DBManager.toModelSchemaTableAlias(
       model
@@ -297,78 +300,78 @@ class DBManager {
     const up = `drop index ${
       model?.schema ? `"${model.schema}".` : ""
     }${name};`;
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,
     };
   }
-  static async addCheckConstraint(model, name, sql) {
+  static async addCheckConstraint(model, name, sql, connection) {
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
       model
     )} add constraint ${name} check (${sql});`;
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
       model
     )} drop constraint ${name};`;
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,
     };
   }
-  static async dropCheckConstraint(model, name, sql) {
+  static async dropCheckConstraint(model, name, sql, connection) {
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
       model
     )} add constraint ${name} check (${sql});`;
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
       model
     )} drop constraint ${name};`;
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,
     };
   }
-  static async addColumn(model, column) {
+  static async addColumn(model, column, connection) {
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
       model
     )} add column ${DBManager.modelColumnToSQL(column)};`;
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
       model
     )} drop column "${column.column}";`;
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,
     };
   }
-  static async dropColumn(model, column) {
+  static async dropColumn(model, column, connection) {
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
       model
     )} add column ${DBManager.modelColumnToSQL(column)};`;
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
       model
     )} drop column "${column.column}";`;
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,
     };
   }
-  static async renameColumn(model, column, newName) {
+  static async renameColumn(model, column, newName, connection) {
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
       model
     )} rename column "${column.column}" to "${newName}";`;
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
       model
     )} rename column "${newName}" to "${column.column}";`;
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,
     };
   }
-  static async setColumnDefaultValue(model, column, defaultValue) {
+  static async setColumnDefaultValue(model, column, defaultValue, connection) {
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
       model
     )} alter column "${column.column}" set default ${defaultValue};`;
@@ -383,13 +386,13 @@ class DBManager {
         column.columnConfig.defaultValue
       };`;
     }
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,
     };
   }
-  static async dropColumnDefaultValue(model, column) {
+  static async dropColumnDefaultValue(model, column, connection) {
     let down = `alter table ${DBManager.toModelSchemaTableAlias(
       model
     )} alter column "${column.column}" set default ${defaultValue};`;
@@ -403,13 +406,13 @@ class DBManager {
         column.columnConfig.defaultValue
       };`;
     }
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,
     };
   }
-  static async setColumnNotNullable(model, column) {
+  static async setColumnNotNullable(model, column, connection) {
     let down = `alter table ${DBManager.toModelSchemaTableAlias(
       model
     )} alter column "${column.column}" drop not null;`;
@@ -423,13 +426,13 @@ class DBManager {
     ) {
       down = up;
     }
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,
     };
   }
-  static async setColumnNullable(model, column) {
+  static async setColumnNullable(model, column, connection) {
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
       model
     )} alter column "${column.column}" drop not null;`;
@@ -443,7 +446,7 @@ class DBManager {
     ) {
       down = up;
     }
-    await DB.pool.query(up);
+    await (connection || DB.pool).query(up);
     return {
       up,
       down,

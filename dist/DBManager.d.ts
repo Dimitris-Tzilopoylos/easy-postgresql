@@ -1,25 +1,38 @@
 export = DBManager;
 declare class DBManager {
-  static createSchema(schemaName?: any): Promise<{
+  static createSchema(
+    schemaName: string,
+    connection?: any
+  ): Promise<{
     up: string;
     down: string;
   }>;
-  static dropSchema(schemaName?: any): Promise<{
+  static dropSchema(
+    schemaName: string,
+    connection?: any
+  ): Promise<{
     up: string;
     down: string;
   }>;
-  static dropTable(model: any): Promise<{
+  static dropTable(
+    model: any,
+    connection?: any
+  ): Promise<{
     up: string;
     down: string;
   }>;
-  static createTable(model: any): Promise<{
+  static createTable(
+    model: any,
+    connection?: any
+  ): Promise<{
     up: string;
     down: string;
   }>;
   static createPrimaryKey(
     model: any,
     name: string,
-    columns: any[]
+    columns: any[],
+    connection?: any
   ): Promise<{
     up: string;
     down: string;
@@ -27,7 +40,8 @@ declare class DBManager {
   static dropPrimaryKey(
     model: any,
     name: string,
-    columns: any[]
+    columns: any[],
+    connection?: any
   ): Promise<{
     up: string;
     down: string;
@@ -39,7 +53,8 @@ declare class DBManager {
     fromColumns: any[],
     toColumns: any[],
     onUpdate?: "cascade" | "no action" | "restrict",
-    onDelete?: "cascade" | "no action" | "restrict"
+    onDelete?: "cascade" | "no action" | "restrict",
+    connection?: any
   ): Promise<{
     up: string;
     down: string;
@@ -51,7 +66,8 @@ declare class DBManager {
     fromColumns: any[],
     toColumns: any[],
     onUpdate?: "cascade" | "no action" | "restrict",
-    onDelete?: "cascade" | "no action" | "restrict"
+    onDelete?: "cascade" | "no action" | "restrict",
+    connection?: any
   ): Promise<{
     up: string;
     down: string;
@@ -59,7 +75,8 @@ declare class DBManager {
   static createUniqueConstraint(
     model: any,
     name: string,
-    columns: any[]
+    columns: any[],
+    connection?: any
   ): Promise<{
     up: string;
     down: string;
@@ -67,7 +84,8 @@ declare class DBManager {
   static dropUniqueConstraint(
     model: any,
     name: string,
-    columns: any[]
+    columns: any[],
+    connection?: any
   ): Promise<{
     up: string;
     down: string;
@@ -75,7 +93,8 @@ declare class DBManager {
   static createUniqueIndex(
     model: any,
     name: string,
-    columns: any[]
+    columns: any[],
+    connection?: any
   ): Promise<{
     up: string;
     down: string;
@@ -83,7 +102,8 @@ declare class DBManager {
   static dropUniqueIndex(
     model: any,
     name: string,
-    columns: any[]
+    columns: any[],
+    connection?: any
   ): Promise<{
     up: string;
     down: string;
@@ -92,7 +112,8 @@ declare class DBManager {
     model: any,
     name: string,
     columns: any[],
-    type: string
+    type: string,
+    connection?: any
   ): Promise<{
     up: string;
     down: string;
@@ -101,7 +122,8 @@ declare class DBManager {
     model: any,
     name: string,
     columns: any[],
-    type: string
+    type: string,
+    connection?: any
   ): Promise<{
     up: string;
     down: string;
@@ -109,7 +131,8 @@ declare class DBManager {
   static addCheckConstraint(
     model: any,
     name: string,
-    sql: string
+    sql: string,
+    connection?: any
   ): Promise<{
     up: string;
     down: string;
@@ -117,21 +140,24 @@ declare class DBManager {
   static dropCheckConstraint(
     model: any,
     name: string,
-    sql: string
+    sql: string,
+    connection?: any
   ): Promise<{
     up: string;
     down: string;
   }>;
   static addColumn(
     model: any,
-    column: Column
+    column: Column,
+    connection?: any
   ): Promise<{
     up: string;
     down: string;
   }>;
   static dropColumn(
     model: any,
-    column: Column
+    column: Column,
+    connection?: any
   ): Promise<{
     up: string;
     down: string;
@@ -139,7 +165,8 @@ declare class DBManager {
   static renameColumn(
     model: any,
     column: Column,
-    newName: string
+    newName: string,
+    connection?: any
   ): Promise<{
     up: string;
     down: string;
@@ -147,28 +174,32 @@ declare class DBManager {
   static setColumnDefaultValue(
     model: any,
     column: Column,
-    defaultValue: any
+    defaultValue: any,
+    connection?: any
   ): Promise<{
     up: string;
     down: string;
   }>;
   static dropColumnDefaultValue(
     model: any,
-    column: Column
+    column: Column,
+    connection?: any
   ): Promise<{
     up: string;
     down: string;
   }>;
   static setColumnNotNullable(
     model: any,
-    column: Column
+    column: Column,
+    connection?: any
   ): Promise<{
     up: string;
     down: string;
   }>;
   static setColumnNullable(
     model: any,
-    column: Column
+    column: Column,
+    connection?: any
   ): Promise<{
     up: string;
     down: string;
@@ -179,8 +210,8 @@ declare class DBManager {
   static modelColumnstoSql(model: any): string;
   static modelColumnToSQL(column: any): string;
   static modelColumnConstraints(column: any): string;
-  static createIndexes(model: any): void;
-  static exec(sql: any, args?: any[]): Promise<void>;
+  static createIndexes(model: any, connection?: any): void;
+  static exec(sql: any, args?: any[], connection?: any): Promise<void>;
   static runBash(depth?: number): Promise<void>;
 }
 import Column = require("./column");
