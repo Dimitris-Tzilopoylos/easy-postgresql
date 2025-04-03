@@ -6,31 +6,39 @@ const prompt = require("prompt-sync")({
   sigint: true,
 });
 class DBManager {
-  static async createSchema(schemaName, connection) {
-    const up = `create schema if not exists ${schemaName};`;
-    const down = `drop schema if exists ${schemaName} cascade;`;
+  static async createSchema(schemaName, connection, existsCheck = true) {
+    const up = `create schema ${
+      existsCheck ? "if not exists" : ""
+    } ${schemaName};`;
+    const down = `drop schema ${
+      existsCheck ? "if exists" : ""
+    } ${schemaName} cascade;`;
     await (connection || DB.pool).query(up);
     return {
       up,
       down,
     };
   }
-  static async dropSchema(schemaName, connection) {
-    const up = `drop schema if exists ${schemaName} cascade;`;
-    const down = `create schema if not exists ${schemaName};`;
+  static async dropSchema(schemaName, connection, existsCheck = true) {
+    const up = `drop schema ${
+      existsCheck ? "if exists" : ""
+    } ${schemaName} cascade;`;
+    const down = `create schema ${
+      existsCheck ? "if not exists" : ""
+    } ${schemaName};`;
     await (connection || DB.pool).query(up);
     return {
       up,
       down,
     };
   }
-  static async dropTable(model, connection) {
-    const up = `drop table if exists ${model?.schema || DB.database}.${
-      model.table
-    } cascade;`;
-    const down = `create table if not exists ${model?.schema || DB.database}.${
-      model.table
-    } (
+  static async dropTable(model, connection, existsCheck = true) {
+    const up = `drop table ${existsCheck ? "if exists" : ""} ${
+      model?.schema || DB.database
+    }.${model.table} cascade;`;
+    const down = `create table ${existsCheck ? "if not exists" : ""} ${
+      model?.schema || DB.database
+    }.${model.table} (
             ${DBManager.modelColumnstoSql(model)}
         );`;
     await (connection || DB.pool).query(up);
@@ -39,15 +47,15 @@ class DBManager {
       down,
     };
   }
-  static async createTable(model, connection) {
-    const up = `create table if not exists ${model?.schema || DB.database}.${
-      model.table
-    } (
+  static async createTable(model, connection, existsCheck = true) {
+    const up = `create table ${existsCheck ? "if not exists" : ""} ${
+      model?.schema || DB.database
+    }.${model.table} (
             ${DBManager.modelColumnstoSql(model)}
         );`;
-    const down = `drop table if exists ${model?.schema || DB.database}.${
-      model.table
-    } cascade;`;
+    const down = `drop table ${existsCheck ? "if exists" : ""} ${
+      model?.schema || DB.database
+    }.${model.table} cascade;`;
     await (connection || DB.pool).query(up);
     return {
       up,

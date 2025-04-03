@@ -2,28 +2,32 @@ export = DBManager;
 declare class DBManager {
   static createSchema(
     schemaName: string,
-    connection?: any
+    connection?: any,
+    existsCheck?: boolean
   ): Promise<{
     up: string;
     down: string;
   }>;
   static dropSchema(
     schemaName: string,
-    connection?: any
+    connection?: any,
+    existsCheck?: boolean = true
   ): Promise<{
     up: string;
     down: string;
   }>;
   static dropTable(
     model: any,
-    connection?: any
+    connection?: any,
+    existsCheck?: boolean = true
   ): Promise<{
     up: string;
     down: string;
   }>;
   static createTable(
     model: any,
-    connection?: any
+    connection?: any,
+    existsCheck?: boolean = true
   ): Promise<{
     up: string;
     down: string;
