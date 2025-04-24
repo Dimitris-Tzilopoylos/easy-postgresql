@@ -1,10 +1,16 @@
+import { Pool } from "pg";
+import Model from "./model";
+
 export = DB;
 declare class DB {
-  static models: any;
+  static models: {
+    [k: string]: {
+      [z: string]: Model;
+    };
+  };
   static modelFactory: any;
   static database: any;
   static enableLog: boolean;
-  static scheduler: typeof Scheduler;
   static allowedOrderDirectionsKeys: {
     asc_nulls_first: string;
     asc_nulls_last: string;
@@ -37,7 +43,7 @@ declare class DB {
   };
   static replicas: any[];
   static replicationIndex: number;
-  static pool: any;
+  static pool: Pool;
   static postgis: boolean;
   static client: any;
   static clientConnected: boolean;
@@ -166,18 +172,6 @@ declare class DB {
     limit: number;
     per_page: any;
   };
-  static loadApi(callback: any): void;
-  static runJob({
-    seconds,
-    execPath,
-    isPromise,
-    log,
-  }: {
-    seconds?: number;
-    execPath: any;
-    isPromise?: boolean;
-    log?: boolean;
-  }): void;
   static enablePOSTGIS(value?: boolean): void;
   static getDriver(): any;
   constructor(table?: string, connection?: any, schema?: any);
@@ -202,6 +196,40 @@ declare class DB {
   updateQueryExec(sql: any, args: any, returning?: boolean): Promise<any>;
   deleteQueryExec(sql: any, args: any, returning?: boolean): Promise<any>;
   raw(sql: any, args?: any[], primary?: boolean): Promise<any>;
+  buildSelect({
+    where,
+    include,
+    aggregate,
+    orderBy,
+    select,
+    groupBy,
+    distinct,
+    limit,
+    offset,
+    extras,
+    asText,
+    forUpdate,
+  }?: {
+    where?: any;
+    include?: any;
+    aggregate?: any;
+    orderBy?: any;
+    groupBy?: any;
+    select?: any;
+    distinct?: any;
+    limit?: any;
+    offset?: any;
+    extras?: { [key: string]: (x: string) => string };
+    asText?: boolean;
+    forUpdate?:
+      | boolean
+      | "for_update"
+      | "for_no_key_update"
+      | "for_share"
+      | "for_key_share"
+      | "nowait"
+      | "skip_locked";
+  }): [string, any[]];
   findOne({
     where,
     include,
@@ -240,6 +268,7 @@ declare class DB {
     distinct,
     limit,
     offset,
+    groupBy,
     extras,
     asText,
     forUpdate,
@@ -266,6 +295,7 @@ declare class DB {
     where,
     include,
     select,
+    groupBy,
     orderBy,
     distinct,
     extras,
@@ -276,8 +306,8 @@ declare class DB {
     include?: any;
     aggregate?: any;
     orderBy?: any;
-    groupBy?: any;
     select?: any;
+    groupBy;
     distinct?: any;
     extras?: { [key: string]: (x: string) => string };
     asText?: boolean;
@@ -291,6 +321,40 @@ declare class DB {
       | "skip_locked";
   }): Promise<any>;
   find({
+    where,
+    include,
+    aggregate,
+    orderBy,
+    select,
+    groupBy,
+    distinct,
+    limit,
+    offset,
+    extras,
+    asText,
+    forUpdate,
+  }?: {
+    where?: any;
+    include?: any;
+    aggregate?: any;
+    orderBy?: any;
+    groupBy?: any;
+    select?: any;
+    distinct?: any;
+    limit?: any;
+    offset?: any;
+    extras?: { [key: string]: (x: string) => string };
+    asText?: boolean;
+    forUpdate?:
+      | boolean
+      | "for_update"
+      | "for_no_key_update"
+      | "for_share"
+      | "for_key_share"
+      | "nowait"
+      | "skip_locked";
+  }): Promise<any>;
+  findAll({
     where,
     include,
     aggregate,
@@ -478,7 +542,12 @@ declare class DB {
     select?: any,
     extras?: { [key: string]: (x: string) => string }
   ): string;
+  makeRelationalWhereAliases(
+    alias: string,
+    referencedAlias: string,
+    relation: any
+  ): string;
   get columnsStrNoAlias(): string;
+  get dbPool(): Pool;
   getRelatedModelByAlias(alias: any): any;
 }
-import Scheduler = require("./scheduler");

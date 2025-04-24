@@ -25,6 +25,33 @@ class Relation {
       !(where instanceof Date)
         ? where
         : {};
+
+    this.validateRelationConfig();
+  }
+
+  validateRelationConfig() {
+    if (
+      Array.isArray(this.from_column) &&
+      (!Array.isArray(this.to_column) ||
+        this.to_column.length !== this.from_column.length)
+    ) {
+      throw new Error(
+        `when from and to column are arrays, they must have the same length`
+      );
+    }
+    if (
+      Array.isArray(this.to_column) &&
+      (!Array.isArray(this.from_column) ||
+        this.to_column.length !== this.from_column.length)
+    ) {
+      throw new Error(
+        `when from and to column are arrays, they must have the same length`
+      );
+    }
+
+    if (!this.from_column.length || !this.to_column.length) {
+      throw new Error(`please provide from and to column values`);
+    }
   }
 }
 module.exports = Relation;

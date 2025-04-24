@@ -1,5 +1,14 @@
 export = Column;
-declare class Column {
+
+type SQLTypeMap = {
+  uuid: string;
+  text: string;
+  number: number;
+  boolean: boolean;
+  date: Date;
+};
+
+declare class Column<T extends keyof SQLTypeMap> {
   constructor({
     name,
     type,
@@ -17,7 +26,7 @@ declare class Column {
   }?: {
     defaultValue?: any;
     name: any;
-    type: any;
+    type: T;
     nullable?: boolean;
     length?: any;
     min?: any;
@@ -31,7 +40,7 @@ declare class Column {
   });
   columnConfig: {
     name: any;
-    type: any;
+    type: T;
     nullable?: boolean;
     length?: any;
     defaultValue?: any;

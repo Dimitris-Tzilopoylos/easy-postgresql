@@ -11,8 +11,8 @@ declare class Relation {
     alias: string;
     from_table?: string;
     to_table: string;
-    from_column: string;
-    to_column: string;
+    from_column: string | string[];
+    to_column: string | string[];
     type: "object" | "array";
     schema?: string;
     where?: any;
@@ -20,9 +20,10 @@ declare class Relation {
   alias: string;
   from_table?: string;
   to_table: string;
-  from_column: string;
-  to_column: string;
+  from_column: string | string[];
+  to_column: string | string[];
   type: "object" | "array";
   schema?: any;
   where?: any;
+  validateRelationConfig(): never;
 }

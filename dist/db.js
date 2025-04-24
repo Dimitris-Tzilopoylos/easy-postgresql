@@ -19,7 +19,6 @@ const {
   POSTGIS_DISTANCE_COMPARISON_OPERATORS,
 } = require("./constants");
 const { Pool, types, Client } = require("pg");
-const Scheduler = require("./scheduler");
 const RawSQL = require("./raw");
 const ValidationService = require("./validation");
 const SQL = require("./sql");
@@ -33,7 +32,6 @@ class DB {
   static database = "public";
   static enableLog = false;
   static replicas = [];
-  static scheduler = Scheduler;
   static allowedOrderDirectionsKeys = {
     ASC: "asc",
     DESC: "desc",
@@ -227,6 +225,204 @@ class DB {
       return await DB.roundRobinReplicaPoolRetrieval().query(sql, args);
     }
   }
+  buildSelect({
+    where = {},
+    include = {},
+    aggregate = null,
+    orderBy,
+    groupBy,
+    distinct,
+    select,
+    limit,
+    offset,
+    extras,
+    asText,
+    forUpdate,
+  } = {}) {
+    let depth = 0;
+    let index = 1;
+    const alias = this.makeDepthAlias(this.table, depth);
+    const args = [];
+    const modelColumnsStr = this.getModelColumnsCommaSeperatedString(
+      alias,
+      select,
+      extras
+    );
+    const selectColumnsStr = [modelColumnsStr]
+      .concat(
+        Object.keys(include).map(
+          (alias, idx) => `${this.makeDepthAlias(alias, 1 + idx)}.${alias}`
+        )
+      )
+      .join(",");
+    let sql = `select coalesce(json_agg(${alias}),'[]')${
+      asText ? "::text" : ""
+    } as ${this.table} 
+        from (
+          select row_to_json((
+            select ${alias}
+            from ( SELECT ${selectColumnsStr}) ${alias} )) ${alias}
+            from (
+              select ${this.makeDistinctOn(
+                distinct,
+                alias
+              )} ${modelColumnsStr} from "${this.schema}"."${
+      this.table
+    }" ${alias}`;
+    const self = this;
+    function makeQuery(model, relations, depth, prevAlias) {
+      if (!relations || typeof relations === "boolean") {
+        return "";
+      }
+      let sql = ``;
+      const _iter = Object.entries(relations);
+      for (let i = 0; i < _iter.length; i++) {
+        const [_alias, config] = _iter[i];
+        const alias = DB.getRelationNameWithoutAggregate(_alias);
+        const isAggregate = DB.getIsAggregate(_alias);
+        const relation = model.relations[alias];
+        if (!relation) {
+          throw new Error(`no such relation: ${alias}`);
+        }
+        const currentModel = DB.getRelatedModel(relation);
+        if (!currentModel) {
+          throw new Error(`no such model for table ${relation.to_table}`);
+        }
+        const depthAlias = isAggregate
+          ? self.makeDepthAlias(relation.alias, depth + i) + "_aggregate"
+          : self.makeDepthAlias(relation.alias, depth + i);
+        const coalesceFallback = relation.type === "object" ? "null" : "[]";
+        const coalesceAppendex = relation.type === "object" ? "->0" : "";
+        const modelColumnsStr =
+          currentModel.getModelColumnsCommaSeperatedString(
+            depthAlias,
+            config?.select,
+            config?.extras
+          );
+        const { distinct, groupBy, orderBy, where, include, limit, offset } =
+          DB.isObject(config) ? config : {};
+        const selectColumnsStr = [modelColumnsStr]
+          .concat(
+            Object.keys(include || {}).map(
+              (alias, idx) =>
+                `${self.makeDepthAlias(alias, depth + 1 + idx)}.${alias}`
+            )
+          )
+          .join(",");
+        if (isAggregate) {
+          const [agg] = currentModel.aggregateInternal({
+            ...config,
+            where: currentModel._mergeRelationalWhere(
+              config.where || {},
+              relation.where || {}
+            ),
+            alias: depthAlias,
+            relationAlias: relation.alias,
+          });
+          sql += `
+              left join lateral  (${agg} 
+            `;
+        } else {
+          sql += ` 
+          left outer join lateral ( select coalesce(json_agg(${depthAlias})${coalesceAppendex},'${coalesceFallback}') as ${
+            relation.alias
+          } 
+          from (
+            select row_to_json((
+              select ${depthAlias}
+              from ( SELECT ${selectColumnsStr}) ${depthAlias} )) ${depthAlias}
+              from (
+                select ${currentModel.makeDistinctOn(
+                  distinct,
+                  depthAlias
+                )} ${modelColumnsStr} from "${currentModel?.schema}"."${
+            currentModel.table
+          }" ${depthAlias} `;
+        }
+        const appendSql = makeQuery(
+          currentModel,
+          include,
+          depth + 1,
+          depthAlias
+        );
+        const [whereClauseStr, qArgs, idx] = currentModel.makeWhereClause(
+          currentModel,
+          currentModel._mergeRelationalWhere(where || {}, relation.where || {}),
+          index,
+          depthAlias,
+          false,
+          false
+        );
+        args.push(...qArgs);
+        index = idx;
+        const groupByStr = currentModel.makeGroupBy(groupBy, depthAlias);
+        const [orderByStr, orderByArgs, orderByIndx] = currentModel.makeOrderBy(
+          orderBy,
+          index,
+          depthAlias
+        );
+        args.push(...orderByArgs);
+        index = orderByIndx;
+        const [limitStr, limitArgs, idxLimit] = currentModel.makeLimit(
+          limit,
+          index
+        );
+        index = idxLimit;
+        args.push(...limitArgs);
+        const [offsetStr, offsetArgs, idxOffset] = currentModel.makeOffset(
+          offset,
+          index
+        );
+        args.push(...offsetArgs);
+        index = idxOffset;
+        if (!isAggregate) {
+          sql += `
+            where ${currentModel.makeRelationalWhereAliases(
+              prevAlias,
+              depthAlias,
+              relation
+            )} ${whereClauseStr} ${groupByStr} ${orderByStr} ${limitStr} ${offsetStr} ) ${depthAlias}  ${appendSql} ) ${depthAlias} ) as ${depthAlias} on true `;
+        } else {
+          sql += ` where ${currentModel.makeRelationalWhereAliases(
+            prevAlias,
+            depthAlias,
+            relation
+          )} ${whereClauseStr} ${groupByStr} )   as ${depthAlias} on true `;
+        }
+      }
+      return sql;
+    }
+    const [whereClauseStr, whereArgs, idx] = this.makeWhereClause(
+      this,
+      where,
+      index,
+      alias,
+      true,
+      true
+    );
+    index = idx;
+    args.push(...whereArgs);
+    const groupByStr = this.makeGroupBy(groupBy, alias);
+    const [orderByStr, orderByArgs, orderByIndx] = this.makeOrderBy(
+      orderBy,
+      index,
+      alias
+    );
+    args.push(...orderByArgs);
+    index = orderByIndx;
+    const [limitStr, limitArgs, idxLimit] = this.makeLimit(limit, index);
+    index = idxLimit;
+    args.push(...limitArgs);
+    const [offsetStr, offsetArgs, idxOffset] = this.makeOffset(offset, index);
+    args.push(...offsetArgs);
+    index = idxOffset;
+    sql += ` ${whereClauseStr} ${groupByStr} ${orderByStr} ${limitStr} ${offsetStr} ${this.forUpdateResolve(
+      forUpdate
+    )}) ${alias} `;
+    sql += makeQuery(this, include, depth + 1, alias);
+    sql += ` ) ${alias}`;
+    return [sql, args];
+  }
   async findOne({
     where = {},
     include = {},
@@ -273,6 +469,90 @@ class DB {
     forUpdate,
   } = {}) {
     try {
+      const [sql, args] = this.buildSelect({
+        where,
+        include,
+        aggregate,
+        orderBy,
+        groupBy,
+        distinct,
+        select,
+        limit,
+        offset,
+        extras,
+        asText,
+        forUpdate,
+      });
+      if (DB.enableLog) {
+        console.log(sql, args);
+      }
+      const result = (await this.selectQueryExec(sql, args))?.[this.table];
+      if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.SELECT)) {
+        DB.executeEvent(
+          this.schema,
+          this.table,
+          DB.EventNameSpaces.SELECT,
+          result,
+          this
+        );
+      }
+      if (
+        DB.asyncEventExists(this.schema, this.table, DB.EventNameSpaces.SELECT)
+      ) {
+        await DB.executeAsyncEvent(
+          this.schema,
+          this.table,
+          DB.EventNameSpaces.SELECT,
+          result,
+          this
+        );
+      }
+      if (DB.asyncActionExists(DB.EventNameSpaces.SELECT)) {
+        await DB.executeAsyncAction(DB.EventNameSpaces.SELECT, result, this);
+      }
+      return result;
+    } catch (error) {
+      if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)) {
+        DB.executeEvent(
+          this.schema,
+          this.table,
+          DB.EventNameSpaces.ERROR,
+          error,
+          this
+        );
+      }
+      if (
+        DB.asyncEventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)
+      ) {
+        await DB.executeAsyncEvent(
+          this.schema,
+          this.table,
+          DB.EventNameSpaces.ERROR,
+          error,
+          this
+        );
+      }
+      if (DB.asyncActionExists(DB.EventNameSpaces.ERROR)) {
+        await DB.executeAsyncAction(DB.EventNameSpaces.ERROR, error, this);
+      }
+      throw error;
+    }
+  }
+  async findAll({
+    where = {},
+    include = {},
+    aggregate = null,
+    orderBy,
+    groupBy,
+    distinct,
+    select,
+    limit,
+    offset,
+    extras,
+    asText,
+    forUpdate,
+  } = {}) {
+    try {
       let depth = 0;
       let index = 1;
       const alias = this.makeDepthAlias(this.table, depth);
@@ -289,20 +569,13 @@ class DB {
           )
         )
         .join(",");
-      let sql = `select coalesce(json_agg(${alias}),'[]')${
+      let sql = `select coalesce(json_agg( row_to_json(${alias})),'[]')${
         asText ? "::text" : ""
       } as ${this.table} 
-        from (
-          select row_to_json((
-            select ${alias}
-            from ( SELECT ${selectColumnsStr}) ${alias} )) ${alias}
-            from (
-              select ${this.makeDistinctOn(
-                distinct,
-                alias
-              )} ${modelColumnsStr} from "${this.schema}"."${
-        this.table
-      }" ${alias}`;
+        from ( select ${this.makeDistinctOn(
+          distinct,
+          alias
+        )} ${selectColumnsStr} from "${this.schema}"."${this.table}" ${alias}`;
       const self = this;
       function makeQuery(model, relations, depth, prevAlias) {
         if (!relations || typeof relations === "boolean") {
@@ -358,18 +631,12 @@ class DB {
             `;
           } else {
             sql += ` 
-          left outer join lateral ( select coalesce(json_agg(${depthAlias})${coalesceAppendex},'${coalesceFallback}') as ${
+          left outer join lateral ( select coalesce(json_agg(row_to_json(${depthAlias}))${coalesceAppendex},'${coalesceFallback}') as ${
               relation.alias
-            } 
-          from (
-            select row_to_json((
-              select ${depthAlias}
-              from ( SELECT ${selectColumnsStr}) ${depthAlias} )) ${depthAlias}
-              from (
-                select ${currentModel.makeDistinctOn(
-                  distinct,
-                  depthAlias
-                )} ${modelColumnsStr} from "${currentModel?.schema}"."${
+            } from ( select ${currentModel.makeDistinctOn(
+              distinct,
+              depthAlias
+            )} ${selectColumnsStr} from "${currentModel?.schema}"."${
               currentModel.table
             }" ${depthAlias} `;
           }
@@ -411,9 +678,18 @@ class DB {
           index = idxOffset;
           if (!isAggregate) {
             sql += `
-            where "${prevAlias}"."${relation.from_column}" = "${depthAlias}"."${relation.to_column}" ${whereClauseStr} ${groupByStr} ${orderByStr} ${limitStr} ${offsetStr} ) ${depthAlias}  ${appendSql} ) ${depthAlias} ) as ${depthAlias} on true `;
+             ${appendSql}
+            where ${currentModel.makeRelationalWhereAliases(
+              prevAlias,
+              depthAlias,
+              relation
+            )} ${whereClauseStr} ${groupByStr} ${orderByStr} ${limitStr} ${offsetStr} ) ${depthAlias} ) as ${depthAlias} on true `;
           } else {
-            sql += ` where "${prevAlias}"."${relation.from_column}" = "${depthAlias}"."${relation.to_column}" ${whereClauseStr} ${groupByStr} )   as ${depthAlias} on true `;
+            sql += ` where ${currentModel.makeRelationalWhereAliases(
+              prevAlias,
+              depthAlias,
+              relation
+            )} ${whereClauseStr} ${groupByStr} )   as ${depthAlias} on true `;
           }
         }
         return sql;
@@ -442,11 +718,12 @@ class DB {
       const [offsetStr, offsetArgs, idxOffset] = this.makeOffset(offset, index);
       args.push(...offsetArgs);
       index = idxOffset;
+      sql += makeQuery(this, include, depth + 1, alias);
       sql += ` ${whereClauseStr} ${groupByStr} ${orderByStr} ${limitStr} ${offsetStr} ${this.forUpdateResolve(
         forUpdate
-      )}) ${alias} `;
-      sql += makeQuery(this, include, depth + 1, alias);
-      sql += ` ) ${alias}`;
+      )}`;
+
+      sql += ` ) as ${alias}`;
       if (DB.enableLog) {
         console.log(sql, args);
       }
@@ -661,14 +938,20 @@ class DB {
           if (!isAggregate) {
             sql += `
             ${appendSql}
-            where "${prevAlias}"."${relation.from_column}" = "${depthAlias}"."${
-              relation.to_column
-            }" ${whereClauseStr} 
+            where ${currentModel.makeRelationalWhereAliases(
+              prevAlias,
+              depthAlias,
+              relation
+            )} ${whereClauseStr} 
              ${
                hasInclude ? `group by ${modelColumnsStr}` : ""
              } ${orderByStr} ${limitStr} ${offsetStr} ) ${depthAlias}  on true `;
           } else {
-            sql += ` ${appendSql} where "${prevAlias}"."${relation.from_column}" = "${depthAlias}"."${relation.to_column}" ${whereClauseStr}  )   ${depthAlias} on  true  `;
+            sql += ` ${appendSql} where ${currentModel.makeRelationalWhereAliases(
+              prevAlias,
+              depthAlias,
+              relation
+            )} ${whereClauseStr}  )   ${depthAlias} on  true  `;
           }
         }
         return sql;
@@ -764,7 +1047,6 @@ class DB {
       throw error;
     }
   }
-
   async insert(args) {
     if (!DB.isObject(args)) {
       return null;
@@ -812,12 +1094,22 @@ class DB {
           if (relation.type === "array" && !Array.isArray(insertInput)) {
             throw new Error("relation type array can only accept array inputs");
           }
-          const dependedColumnValue = prevResult[relation.from_column];
+          const isArrayRelationalColumns = Array.isArray(relation.from_column);
+          const dependedColumnValues = isArrayRelationalColumns
+            ? relation.from_column.map((x) => prevResult[x])
+            : prevResult[relation.from_column];
           const valuesIter =
             relation.type === "object" ? [insertInput] : insertInput;
           const appendResult = [];
           for (let value of valuesIter) {
-            value[relation.to_column] = dependedColumnValue;
+            if (isArrayRelationalColumns) {
+              for (let j = 0; j < relation.to_column.length; j++) {
+                value[relation.to_column[j]] = dependedColumnValues[j];
+              }
+            } else {
+              value[relation.to_column] = dependedColumnValues;
+            }
+
             const { onConflict, ...rest } = value;
             const [modelPayload, relationalPayload] =
               insertionModel.splitRelationalAndModelColumnsInput(rest);
@@ -1733,16 +2025,24 @@ class DB {
         const relation = model.relations[relationKey];
         const currentModel = DB.getRelatedModel(relation);
         const newAlias = this.makeDepthAlias(relation.alias, depth);
-        sql += ` ${getFirstEntry(isFirstEntry, binder)} not exists (select "${
-          relation.to_column
-        }" from "${currentModel?.schema || DB.database}"."${
+        sql += ` ${getFirstEntry(
+          isFirstEntry,
+          binder
+        )} not exists (select 1 from "${
+          currentModel?.schema || DB.database
+        }"."${
           currentModel.table
-        }" ${newAlias} where "${alias}"."${
-          relation.from_column
-        }" = "${newAlias}"."${relation.to_column}"`;
+        }" ${newAlias} where ${currentModel.makeRelationalWhereAliases(
+          alias,
+          newAlias,
+          relation
+        )} `;
         const [qString, qArgs, idx] = currentModel.makeWhereClause(
           currentModel,
-          where[key][relationKey],
+          currentModel._mergeRelationalWhere(
+            where[key][relationKey] || {},
+            relation.where || {}
+          ),
           index,
           newAlias,
           false,
@@ -1758,16 +2058,22 @@ class DB {
         const currentModel = DB.getRelatedModel(relation);
         const newAlias = this.makeDepthAlias(relation.alias, depth);
 
-        sql += ` ${getFirstEntry(isFirstEntry, binder)} exists (select "${
-          relation.to_column
-        }" from "${currentModel.schema || DB.database}"."${
+        sql += ` ${getFirstEntry(
+          isFirstEntry,
+          binder
+        )} exists (select 1 from "${currentModel.schema || DB.database}"."${
           currentModel.table
-        }" ${newAlias} where "${alias}"."${
-          relation.from_column
-        }" = "${newAlias}"."${relation.to_column}"`;
+        }" ${newAlias} where ${currentModel.makeRelationalWhereAliases(
+          alias,
+          newAlias,
+          relation
+        )} `;
         const [qString, qArgs, idx] = currentModel.makeWhereClause(
           currentModel,
-          where[key],
+          currentModel._mergeRelationalWhere(
+            where[key] || {},
+            relation.where || {}
+          ),
           index,
           newAlias,
           false,
@@ -1806,12 +2112,19 @@ class DB {
           binder
         )} (select ${aggregationSQLOperation}(${aggregationColumn}) from "${
           currentModel.schema || DB.database
-        }"."${currentModel.table}" ${newAlias} where "${alias}"."${
-          relation.from_column
-        }" = "${newAlias}"."${relation.to_column}"`;
+        }"."${
+          currentModel.table
+        }" ${newAlias} where  ${currentModel.makeRelationalWhereAliases(
+          alias,
+          newAlias,
+          relation
+        )} `;
         const [qString, qArgs, idx] = currentModel.makeWhereClause(
           currentModel,
-          config?.where,
+          currentModel._mergeRelationalWhere(
+            config?.where || {},
+            relation.where || {}
+          ),
           index,
           newAlias,
           false,
@@ -2064,7 +2377,11 @@ class DB {
     const { _count, ...rest } = aggrConfig;
     let queries = [];
     const table = `"${this.schema}"."${this.table}" `;
-    const whereClause = `"${prevAlias}"."${relation.from_column}" = "${this.table}"."${relation.to_column}"`;
+    const whereClause = `${this.makeRelationalWhereAliases(
+      prevAlias,
+      this.table,
+      relation
+    )} `;
     if (_count) {
       queries.push(
         ` (SELECT  COUNT(*) FROM ${table} WHERE ${whereClause} ) ${
@@ -2183,6 +2500,23 @@ class DB {
     return Object.values(this.columns)
       .map((c) => `"${alias ? alias : this.table}"."${c.column}"`)
       .join(",");
+  }
+  makeRelationalWhereAliases(alias, referencedAlias, relation) {
+    if (
+      Array.isArray(relation.from_column) &&
+      Array.isArray(relation.to_column)
+    ) {
+      return relation.from_column
+        .map(
+          (x, idx) =>
+            `"${alias}"."${x}" = "${referencedAlias}"."${relation.to_column[idx]}"`
+        )
+        .join(" and ");
+    }
+    return `"${alias}"."${relation.from_column}" = "${referencedAlias}"."${relation.to_column}"`;
+  }
+  get dbPool() {
+    return DB.pool;
   }
   get columnsStrNoAlias() {
     return Object.values(this.columns)
@@ -2498,17 +2832,6 @@ class DB {
       limit,
       per_page: view,
     };
-  }
-  static loadApi(callback) {
-    Object.entries(DB.modelFactory).map(callback);
-  }
-  static runJob({ seconds = 0.001, execPath, isPromise = false, log = false }) {
-    DB.scheduler.schedule({
-      exec: execPath,
-      seconds,
-      isPromise,
-      log,
-    });
   }
 
   static getDriver() {

@@ -31,7 +31,7 @@ class Model extends DB {
 
     if (extras && ValidationService.isObject(extras)) {
       return Object.values(this.columns)
-        .map((c) => `${alias ? alias : this.table}.${c.column}`)
+        .map((c) => `"${alias ? alias : this.table}"."${c.column}"`)
         .concat(
           Object.values(extras)
             .filter((x) => typeof x === "function")
