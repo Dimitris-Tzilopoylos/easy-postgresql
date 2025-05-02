@@ -277,6 +277,7 @@ declare class DB {
     include?: any;
     orderBy?: any;
     select?: any;
+    groupBy?: any;
     distinct?: any;
     limit?: any;
     offset?: any;
@@ -307,7 +308,7 @@ declare class DB {
     aggregate?: any;
     orderBy?: any;
     select?: any;
-    groupBy;
+    groupBy?: any;
     distinct?: any;
     extras?: { [key: string]: (x: string) => string };
     asText?: boolean;

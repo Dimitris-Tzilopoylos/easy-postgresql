@@ -11,7 +11,7 @@ declare class DBManager {
   static dropSchema(
     schemaName: string,
     connection?: any,
-    existsCheck?: boolean = true
+    existsCheck?: boolean
   ): Promise<{
     up: string;
     down: string;
@@ -19,7 +19,7 @@ declare class DBManager {
   static dropTable(
     model: any,
     connection?: any,
-    existsCheck?: boolean = true
+    existsCheck?: boolean
   ): Promise<{
     up: string;
     down: string;
@@ -27,7 +27,7 @@ declare class DBManager {
   static createTable(
     model: any,
     connection?: any,
-    existsCheck?: boolean = true
+    existsCheck?: boolean
   ): Promise<{
     up: string;
     down: string;
