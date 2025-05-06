@@ -355,40 +355,6 @@ declare class DB {
       | "nowait"
       | "skip_locked";
   }): Promise<any>;
-  findAll({
-    where,
-    include,
-    aggregate,
-    orderBy,
-    select,
-    groupBy,
-    distinct,
-    limit,
-    offset,
-    extras,
-    asText,
-    forUpdate,
-  }?: {
-    where?: any;
-    include?: any;
-    aggregate?: any;
-    orderBy?: any;
-    groupBy?: any;
-    select?: any;
-    distinct?: any;
-    limit?: any;
-    offset?: any;
-    extras?: { [key: string]: (x: string) => string };
-    asText?: boolean;
-    forUpdate?:
-      | boolean
-      | "for_update"
-      | "for_no_key_update"
-      | "for_share"
-      | "for_key_share"
-      | "nowait"
-      | "skip_locked";
-  }): Promise<any>;
   insert(args: any): Promise<any>;
   createTX(args: any): Promise<any>;
   createManyTX(args: any): Promise<any>;
