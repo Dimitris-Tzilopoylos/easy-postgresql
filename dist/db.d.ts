@@ -191,6 +191,8 @@ declare class DB {
   commit(): Promise<void>;
   rollback(): Promise<void>;
   withTransaction(cb: any): Promise<any>;
+  withConnection(cb: any): Promise<any>;
+  withCurrentSetting(name: string, value: any, cb: any): Promise<any>;
   selectQueryExec(sql: any, args?: any[]): Promise<any>;
   insertQueryExec(sql: any, args: any, returning?: boolean): Promise<any>;
   updateQueryExec(sql: any, args: any, returning?: boolean): Promise<any>;
@@ -517,4 +519,10 @@ declare class DB {
   get columnsStrNoAlias(): string;
   get dbPool(): Pool;
   getRelatedModelByAlias(alias: any): any;
+  setCurrentSetting(name: string, value: any, isLocal?: boolean): Promise<any>;
+  setCurrentSettingParametrized(
+    name: string,
+    value: any,
+    isLocal?: boolean
+  ): Promise<any>;
 }
