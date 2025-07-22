@@ -139,25 +139,9 @@
 
 // const b = new Building();
 
-// b.create({
-//   id: "test",
-//   name: "test",
-//   spaces: [
-//     {
-//       id: "test_space_1",
-//       name: "test_space",
-//       sensors: [{ name: "test_sensor_1" }, { name: "test_sensor_2" }],
-//     },
-//     {
-//       id: "test_space_2",
-//       name: "test_space2",
-//       sensors: [{ name: "test_sensor_3" }, { name: "test_sensor_4" }],
-//     },
-//     {
-//       id: "test_space_3",
-//       name: "test_space2",
-//     },
-//   ],
+// b.aggregate({
+//   _count: true,
+//   _min: { id: true },
 // }).then((res) => {
-//   console.log(res);
+//   console.log(res.min.id);
 // });

@@ -1,6 +1,15 @@
 import { Pool } from "pg";
 import Model from "./model";
 
+type LoggerMethod = (...args: any[]) => void;
+
+interface Logger {
+  info: LoggerMethod;
+  warn: LoggerMethod;
+  error: LoggerMethod;
+  log: LoggerMethod;
+}
+
 export = DB;
 declare class DB {
   static models: {
@@ -8,6 +17,8 @@ declare class DB {
       [z: string]: Model;
     };
   };
+  static logger: Logger;
+  static logLevel: "info" | "warn" | "error" | "log";
   static modelFactory: any;
   static database: any;
   static enableLog: boolean;
@@ -58,6 +69,7 @@ declare class DB {
   static actions: {
     [x: string]: any;
   };
+  static setLogger(logger: Logger): void;
   static hasReplicas(): any;
   static roundRobinReplicaPoolRetrieval(): any;
   static connectClient(): Promise<void>;
@@ -174,6 +186,7 @@ declare class DB {
   };
   static enablePOSTGIS(value?: boolean): void;
   static getDriver(): any;
+  static log(...args: any[]): void;
   constructor(table?: string, connection?: any, schema?: any);
   schema?: any;
   table?: any;
@@ -413,16 +426,16 @@ declare class DB {
   } & T): Promise<
     (T["_count"] extends true ? { count: number } : {}) &
       (T["_max"] extends Record<string, boolean>
-        ? { [K in keyof T["_max"]]: number | null }
+        ? { max: { [K in keyof T["_max"]]: number | null } }
         : {}) &
       (T["_min"] extends Record<string, boolean>
-        ? { [K in keyof T["_min"]]: number | null }
+        ? { min: { [K in keyof T["_min"]]: number | null } }
         : {}) &
       (T["_sum"] extends Record<string, boolean>
-        ? { [K in keyof T["_sum"]]: number | null }
+        ? { sum: { [K in keyof T["_sum"]]: number | null } }
         : {}) &
       (T["_avg"] extends Record<string, boolean>
-        ? { [K in keyof T["_avg"]]: number | null }
+        ? { avg: { [K in keyof T["_avg"]]: number | null } }
         : {})
   >;
   aggregateInternal({

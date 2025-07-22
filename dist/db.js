@@ -56,6 +56,8 @@ class DB {
     connectionTimeoutMillis: 0,
     statement_timeout: 20000,
   };
+  static logger = console;
+  static logLevel = "info";
   static EventNameSpaces = EVENTS;
   static pool = new Pool(DB.connectionConfig);
   static postgis = false;
@@ -99,6 +101,11 @@ class DB {
     this.schema = schema;
     this.savepointCounter = 0;
     this.savepointStack = [];
+  }
+  static setLogger(logger) {
+    if (logger) {
+      DB.logger = logger;
+    }
   }
   static async connectClient() {
     if (!DB.clientConnected) {
@@ -544,7 +551,7 @@ class DB {
         forUpdate,
       });
       if (DB.enableLog) {
-        console.log(sql, args);
+        DB.log(sql, args);
       }
       const result = (await this.selectQueryExec(sql, args))?.[this.table];
       if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.SELECT)) {
@@ -809,7 +816,7 @@ class DB {
 
       sql += ` `;
       if (DB.enableLog) {
-        console.log(sql, args);
+        DB.log(sql, args);
       }
       const { rows: result } = await this.raw(
         sql,
@@ -885,7 +892,7 @@ class DB {
         returning
       );
       if (DB.enableLog) {
-        console.log(query, qArgs);
+        DB.log(query, qArgs);
       }
       const [result] = await this.insertQueryExec(query, qArgs, returning);
       const self = this;
@@ -939,7 +946,7 @@ class DB {
               returning
             );
             if (DB.enableLog) {
-              console.log(query, args);
+              DB.log(query, args);
             }
             const [result] = await self.insertQueryExec(query, args, returning);
             const childrenResult = await insertChildren(
@@ -1290,7 +1297,7 @@ class DB {
       )} ${whereStr} ${returning ? `returning *` : ""}`;
       qArgs.push(...whereArgs);
       if (DB.enableLog) {
-        console.log(sql, qArgs);
+        DB.log(sql, qArgs);
       }
       const result = await this.updateQueryExec(sql, qArgs, returning);
       if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.UPDATE)) {
@@ -1358,7 +1365,7 @@ class DB {
         returning ? `returning *` : ""
       }`;
       if (DB.enableLog) {
-        console.log(sql, whereArgs);
+        DB.log(sql, whereArgs);
       }
       const result = await this.deleteQueryExec(sql, whereArgs, returning);
       if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.DELETE)) {
@@ -1461,7 +1468,7 @@ class DB {
       // const distinctStr = this.makeDistinctOn(distinct, this.table);
       const sql = `select json_build_object(${aggregations})  as ${this.table}_aggregate from "${this.schema}"."${this.table}"  ${whereStr} ${groupByStr}`;
       if (DB.enableLog) {
-        console.log(sql, whereArgs);
+        DB.log(sql, whereArgs);
       }
       return (await this.selectQueryExec(sql, whereArgs))?.[
         `${this.table}_aggregate`
@@ -2560,7 +2567,7 @@ class DB {
           return async () => await DB.client.query(`UNLISTEN ${event}`);
         })
         .catch((err) => {
-          console.log(err);
+          DB.log(err);
           return async () => await DB.client.query(`UNLISTEN ${event}`);
         });
     } catch (error) {
@@ -2590,7 +2597,7 @@ class DB {
           });
       }
     } catch (error) {
-      console.log(error);
+      DB.log(error);
     }
   }
   static unsubscribeAllEvents() {
@@ -2607,7 +2614,7 @@ class DB {
           });
       }
     } catch (error) {
-      console.log(error);
+      DB.log(error);
     }
   }
   static executeEvent(schema, table, namespace, data, instance) {
@@ -2663,6 +2670,14 @@ class DB {
 
   static getDriver() {
     return pg;
+  }
+
+  static log(...args) {
+    if (DB.enableLog) {
+      if (DB.logLevel in DB.logger) {
+        DB.logger[DB.logLevel](...args);
+      }
+    }
   }
 }
 module.exports = DB;
