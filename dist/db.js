@@ -191,6 +191,34 @@ class DB {
       return error;
     }
   }
+  async withConnection(cb) {
+    try {
+      await this.connect();
+      const result = await cb(this.connection);
+      this.disconnect();
+      return result;
+    } catch (error) {
+      this.disconnect();
+      throw error;
+    }
+  }
+  async setCurrentSetting(name, value, isLocal) {
+    return await this.raw(
+      `select set_config('${name}', '${value}', ${isLocal} ? true : false);`
+    );
+  }
+  async setCurrentSettingParametrized(name, value, isLocal) {
+    return await this.raw(
+      `select set_config($1,$2, ${isLocal} ? true : false);`,
+      [name, value]
+    );
+  }
+  async withCurrentSetting(name, value, cb) {
+    return await this.withConnection(async (connection) => {
+      await this.setCurrentSetting(name, value, !!this.transaction);
+      return await cb(connection);
+    });
+  }
   async selectQueryExec(sql, args = []) {
     const {
       rows: [result],
