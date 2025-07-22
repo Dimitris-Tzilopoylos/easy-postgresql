@@ -559,7 +559,7 @@ class DBManager {
   static selectPolicy(name, model, options, connection) {
     const roles =
       options?.roles && Array.isArray(options.roles) && options.roles.length > 0
-        ? `to ${roles.join(", ")}`
+        ? `to ${options.roles.join(", ")}`
         : "";
     const using =
       options?.using && typeof options.using === "string"
@@ -763,7 +763,6 @@ class DBManager {
       },
     };
   }
-
   static toModelSchemaTableAlias(model) {
     return `${model?.schema ? `"${model.schema}".` : ""}"${model.table}"`;
   }
@@ -790,7 +789,6 @@ class DBManager {
 
     return `on ${type} ${value.toLowerCase()}`;
   }
-
   static async createRole(roleName, options = {}, connection) {
     const clauses = [];
 
@@ -837,28 +835,24 @@ class DBManager {
     await (connection || DB.pool).query(up);
     return { up, down };
   }
-
   static async dropRole(roleName, connection) {
     const up = `DROP ROLE IF EXISTS ${roleName};`;
     const down = `CREATE ROLE ${roleName};`; // minimal rollback
     await (connection || DB.pool).query(up);
     return { up, down };
   }
-
   static async grantRole(toRole, fromRole, connection) {
     const up = `GRANT ${fromRole} TO ${toRole};`;
     const down = `REVOKE ${fromRole} FROM ${toRole};`;
     await (connection || DB.pool).query(up);
     return { up, down };
   }
-
   static async revokeRole(toRole, fromRole, connection) {
     const down = `GRANT ${fromRole} TO ${toRole};`;
     const up = `REVOKE ${fromRole} FROM ${toRole};`;
     await (connection || DB.pool).query(up);
     return { up, down };
   }
-
   static async grantPrivileges(role, privileges, model, connection) {
     const up = `GRANT ${privileges.join(
       ", "
@@ -869,7 +863,6 @@ class DBManager {
     await (connection || DB.pool).query(up);
     return { up, down };
   }
-
   static async revokePrivileges(role, privileges, model, connection) {
     const down = `GRANT ${privileges.join(
       ", "
@@ -880,7 +873,6 @@ class DBManager {
     await (connection || DB.pool).query(up);
     return { up, down };
   }
-
   static async alterRole(roleName, options, connection) {
     const clauses = [];
 
@@ -919,7 +911,6 @@ class DBManager {
     await (connection || DB.pool).query(up);
     return { up, down };
   }
-
   static async createSequence(sequenceName, options, connection) {
     const qualifiedName = options?.schema
       ? `${options.schema}.${sequenceName}`
@@ -951,7 +942,6 @@ class DBManager {
     await (connection || DB.pool).query(up);
     return { up, down };
   }
-
   static async dropSequence(sequenceName, schema, connection) {
     const qualifiedName = schema ? `${schema}.${sequenceName}` : sequenceName;
 
@@ -960,7 +950,6 @@ class DBManager {
     await (connection || DB.pool).query(up);
     return { up, down };
   }
-
   static async alterSequence(sequenceName, options, connection) {
     const clauses = [];
 

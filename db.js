@@ -95,6 +95,8 @@ class DB {
     this.database = DB.database;
     this.driver = null;
     this.schema = schema;
+    this.savepointCounter = 0;
+    this.savepointStack = [];
   }
 
   static async connectClient() {
@@ -183,6 +185,40 @@ class DB {
     }
     await this.connection.query(ROLLBACK);
     this.transaction = false;
+  }
+
+  async createSavepoint() {
+    this.savepointCounter++;
+    const spName = `sp_${this.savepointCounter}`;
+    await this.connection.query(`SAVEPOINT ${spName};`);
+    this.savepointStack.push(spName);
+    return spName;
+  }
+
+  async releaseSavepoint() {
+    const spName = this.savepointStack.pop();
+    if (spName) {
+      await this.connection.query(`RELEASE SAVEPOINT ${spName};`);
+    }
+  }
+
+  async rollbackToSavepoint() {
+    const spName = this.savepointStack.pop();
+    if (spName) {
+      await this.connection.query(`ROLLBACK TO SAVEPOINT ${spName};`);
+    }
+  }
+
+  async withSavepoint(cb) {
+    await this.createSavepoint();
+    try {
+      const result = await cb(this.connection);
+      await this.releaseSavepoint();
+      return result;
+    } catch (err) {
+      await this.rollbackToSavepoint();
+      throw err;
+    }
   }
 
   async withTransaction(cb) {
@@ -631,8 +667,15 @@ class DB {
       }
       await this.connect();
       const result = await this.withTransaction(async (tx) => {
-        const promises = args.map((input) => this.insert(input));
-        return await Promise.all(promises);
+        const results = [];
+        for (const input of args) {
+          const res = await this.insert(input);
+          if (res instanceof Error) {
+            throw res;
+          }
+          results.push(res);
+        }
+        return results;
       });
       this.disconnect();
       if (DB.eventExists(this.table, DB.EventNameSpaces.INSERT)) {

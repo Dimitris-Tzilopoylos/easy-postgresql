@@ -105,7 +105,7 @@ class User extends Model {
 
 // Register the models in order to be able to use relations
 DB.register(User);
-DB.regitser(Role);
+DB.register(Role);
 ```
 
 ## Basic examples
@@ -297,7 +297,7 @@ class User extends Model {
 
 // Register the models in order to be able to use relations
 DB.register(User);
-DB.regitser(Role);
+DB.register(Role);
 
 const model = new Role();
 const role = await model.findOne({

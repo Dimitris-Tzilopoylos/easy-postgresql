@@ -185,11 +185,17 @@ declare class DB {
   transaction: boolean;
   database: any;
   driver: any;
+  savepointCounter: number;
+  savepointStack: string[];
   connect(primary?: boolean): Promise<void>;
   disconnect(): void;
   startTransaction(): Promise<void>;
   commit(): Promise<void>;
   rollback(): Promise<void>;
+  createSavepoint(): Promise<string>;
+  releaseSavepoint(): Promise<void>;
+  rollbackToSavepoint(): Promise<void>;
+  withSavepoint<T>(cb: (conn?: any) => Promise<T>): Promise<T>;
   withTransaction(cb: any): Promise<any>;
   withConnection(cb: any): Promise<any>;
   withCurrentSetting(name: string, value: any, cb: any): Promise<any>;
@@ -232,7 +238,7 @@ declare class DB {
       | "nowait"
       | "skip_locked";
   }): [string, any[]];
-  findOne({
+  findOne<T = any>({
     where,
     include,
     aggregate,
@@ -261,7 +267,7 @@ declare class DB {
       | "for_key_share"
       | "nowait"
       | "skip_locked";
-  }): Promise<any>;
+  }): Promise<T>;
   select({
     where,
     include,
@@ -323,7 +329,7 @@ declare class DB {
       | "nowait"
       | "skip_locked";
   }): Promise<any>;
-  find({
+  find<T = any[]>({
     where,
     include,
     aggregate,
@@ -356,13 +362,13 @@ declare class DB {
       | "for_key_share"
       | "nowait"
       | "skip_locked";
-  }): Promise<any>;
-  insert(args: any): Promise<any>;
-  createTX(args: any): Promise<any>;
-  createManyTX(args: any): Promise<any>;
-  create(args: any): Promise<any>;
-  createMany(args: any): Promise<any[]>;
-  update({
+  }): Promise<T>;
+  insert<T = any>(args: any): Promise<T>;
+  createTX<T = any>(args: any): Promise<T>;
+  createManyTX<T = any[]>(args: any): Promise<T>;
+  create<T = any>(args: any): Promise<T>;
+  createMany<T = any[]>(args: any): Promise<T>;
+  update<T = any[]>({
     update,
     where,
     returning,
@@ -370,15 +376,23 @@ declare class DB {
     update: any;
     where?: any;
     returning?: boolean;
-  }): Promise<any>;
-  delete({
+  }): Promise<T>;
+  delete<T = any[]>({
     where,
     returning,
   }: {
     where?: any;
     returning?: boolean;
-  }): Promise<any>;
-  aggregate({
+  }): Promise<T>;
+  aggregate<
+    T extends {
+      _count?: boolean;
+      _max?: Record<string, any>;
+      _min?: Record<string, any>;
+      _sum?: Record<string, any>;
+      _avg?: Record<string, any>;
+    }
+  >({
     where,
     groupBy,
     distinct,
@@ -396,7 +410,21 @@ declare class DB {
     _min?: any;
     _sum?: any;
     _avg?: any;
-  }): Promise<any>;
+  } & T): Promise<
+    (T["_count"] extends true ? { count: number } : {}) &
+      (T["_max"] extends Record<string, boolean>
+        ? { [K in keyof T["_max"]]: number | null }
+        : {}) &
+      (T["_min"] extends Record<string, boolean>
+        ? { [K in keyof T["_min"]]: number | null }
+        : {}) &
+      (T["_sum"] extends Record<string, boolean>
+        ? { [K in keyof T["_sum"]]: number | null }
+        : {}) &
+      (T["_avg"] extends Record<string, boolean>
+        ? { [K in keyof T["_avg"]]: number | null }
+        : {})
+  >;
   aggregateInternal({
     where,
     groupBy,
