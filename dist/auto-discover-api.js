@@ -135,9 +135,7 @@ class Postgres {
             idx > 0 ? "\t\t\t" : "\n\t\t\t"
           }${relation}: new Relation({\n\t\t\t\talias: "${
             config.alias
-          }",\n\t\t\t\ttype: "${config.type.toLowerCase()}",\n\t\t\t\tfrom_table: "${
-            config.from_table || instance.table
-          }",\n\t\t\t\tschema: "${
+          }",\n\t\t\t\ttype: "${config.type.toLowerCase()}",\n\t\t\t\t,schema: "${
             config.schema || "public"
           }",\n\t\t\t\tfrom_table: "${
             config.from_table || instance.table
