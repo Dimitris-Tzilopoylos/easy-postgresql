@@ -6,6 +6,14 @@ const prompt = require("prompt-sync")({
   sigint: true,
 });
 class DBManager {
+  static async alterSchemaOwner(schemaName, owner, connection) {
+    const up = `alter schema "${schemaName}" owner to ${owner};`;
+    await (connection || DB.pool).query(up);
+    return {
+      up,
+      down: `-- No down migration for alterSchemaOwner("${schemaName}",${owner})`,
+    };
+  }
   static async createSchema(schemaName, connection, existsCheck = true) {
     const up = `create schema ${
       existsCheck ? "if not exists" : ""
@@ -30,6 +38,18 @@ class DBManager {
     return {
       up,
       down,
+    };
+  }
+  static async alterTableOwner(model, owner, connection) {
+    const up = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} owner to ${owner};`;
+    await (connection || DB.pool).query(up);
+    return {
+      up,
+      down: `-- No down migration for alterTableOwner(${DBManager.toModelSchemaTableAlias(
+        model
+      )},${owner})`,
     };
   }
   static async dropTable(model, connection, existsCheck = true) {
@@ -460,6 +480,290 @@ class DBManager {
       down,
     };
   }
+  static async enableRLS(model, connection) {
+    const up = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} enable row level security;`;
+
+    let down = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} disable row level security;`;
+
+    await (connection || DB.pool).query(up);
+    return {
+      up,
+      down,
+    };
+  }
+  static async disableRLS(model, connection) {
+    const down = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} enable row level security;`;
+
+    let up = `alter table ${DBManager.toModelSchemaTableAlias(
+      model
+    )} disable row level security;`;
+
+    await (connection || DB.pool).query(up);
+    return {
+      up,
+      down,
+    };
+  }
+  static async enableSchemaRLS(schema, connection) {
+    const registeredModels = DB.modelFactory[schema];
+    if (
+      DB.isObject(registeredModels) &&
+      Object.values(registeredModels).length
+    ) {
+      const results = [];
+      for (const model of Object.values(registeredModels)) {
+        const result = await DBManager.enableRLS(new model(), connection);
+        results.push(result);
+      }
+
+      return {
+        up: results.map((item) => item.up).join("\n"),
+        down: results.map((item) => item.down).join("\n"),
+      };
+    }
+
+    return {
+      up: "",
+      down: "",
+    };
+  }
+  static async disableSchemaRLS(schema, connection) {
+    const registeredModels = DB.modelFactory[schema];
+    if (
+      DB.isObject(registeredModels) &&
+      Object.values(registeredModels).length
+    ) {
+      const results = [];
+      for (const model of Object.values(registeredModels)) {
+        const result = await DBManager.disableRLS(new model(), connection);
+        results.push(result);
+      }
+
+      return {
+        up: results.map((item) => item.up).join("\n"),
+        down: results.map((item) => item.down).join("\n"),
+      };
+    }
+
+    return {
+      up: "",
+      down: "",
+    };
+  }
+  static selectPolicy(name, model, options, connection) {
+    const roles =
+      options?.roles && Array.isArray(options.roles) && options.roles.length > 0
+        ? `to ${roles.join(", ")}`
+        : "";
+    const using =
+      options?.using && typeof options.using === "string"
+        ? options.using.startsWith("(")
+          ? options.using
+          : `(${options.using})`
+        : "(true)";
+    let up = `create policy ${name} on ${DBManager.toModelSchemaTableAlias(
+      model
+    )} for select ${roles} using ${using};`;
+    let down = `drop policy ${name} on ${DBManager.toModelSchemaTableAlias(
+      model
+    )};`;
+    return {
+      create: async () => {
+        await (connection || DB.pool).query(up);
+        return {
+          up,
+          down,
+        };
+      },
+      drop: async () => {
+        await (connection || DB.pool).query(down);
+        return {
+          up: down,
+          down: up,
+        };
+      },
+    };
+  }
+  static insertPolicy(name, model, options, connection) {
+    const roles =
+      options?.roles && Array.isArray(options.roles) && options.roles.length > 0
+        ? `to ${options.roles.join(", ")}`
+        : "";
+
+    const using =
+      options?.using && typeof options.using === "string"
+        ? options.using.startsWith("(")
+          ? options.using
+          : `(${options.using})`
+        : "";
+
+    const check =
+      options?.check && typeof options.check === "string"
+        ? options.check.startsWith("(")
+          ? options.check
+          : `(${options.check})`
+        : "";
+    const kind =
+      options?.kind === "restrictive"
+        ? "as restrictive"
+        : options?.kind === "permissive"
+        ? "as permissive"
+        : "";
+    const usingClause = using ? ` using ${using}` : "";
+    const checkClause = check ? ` with check ${check}` : "";
+
+    const tableRef = DBManager.toModelSchemaTableAlias(model);
+
+    const up = `create policy ${name} on ${tableRef} for insert ${kind} ${roles} ${usingClause} ${checkClause};`;
+    const down = `drop policy ${name} on ${tableRef};`;
+
+    return {
+      create: async () => {
+        await (connection || DB.pool).query(up);
+        return { up, down };
+      },
+      drop: async () => {
+        await (connection || DB.pool).query(down);
+        return { up: down, down: up };
+      },
+    };
+  }
+  static updatePolicy(name, model, options, connection) {
+    const roles =
+      options?.roles && Array.isArray(options.roles) && options.roles.length > 0
+        ? `to ${options.roles.join(", ")}`
+        : "";
+
+    const using =
+      options?.using && typeof options.using === "string"
+        ? options.using.startsWith("(")
+          ? options.using
+          : `(${options.using})`
+        : "";
+
+    const check =
+      options?.check && typeof options.check === "string"
+        ? options.check.startsWith("(")
+          ? options.check
+          : `(${options.check})`
+        : "";
+    const kind =
+      options?.kind === "restrictive"
+        ? "as restrictive"
+        : options?.kind === "permissive"
+        ? "as permissive"
+        : "";
+
+    const usingClause = using ? ` using ${using}` : "";
+    const checkClause = check ? ` with check ${check}` : "";
+
+    const tableRef = DBManager.toModelSchemaTableAlias(model);
+
+    const up = `create policy ${name} on ${tableRef} for update ${kind} ${roles} ${usingClause} ${checkClause};`;
+    const down = `drop policy ${name} on ${tableRef};`;
+
+    return {
+      create: async () => {
+        await (connection || DB.pool).query(up);
+        return { up, down };
+      },
+      drop: async () => {
+        await (connection || DB.pool).query(down);
+        return { up: down, down: up };
+      },
+    };
+  }
+  static deletePolicy(name, model, options, connection) {
+    const roles =
+      options?.roles && Array.isArray(options.roles) && options.roles.length > 0
+        ? `to ${options.roles.join(", ")}`
+        : "";
+
+    const using =
+      options?.using && typeof options.using === "string"
+        ? options.using.startsWith("(")
+          ? options.using
+          : `(${options.using})`
+        : "";
+
+    const kind =
+      options?.kind === "restrictive"
+        ? "as restrictive"
+        : options?.kind === "permissive"
+        ? "as permissive"
+        : "";
+
+    const usingClause = using ? ` using ${using}` : "";
+
+    const tableRef = DBManager.toModelSchemaTableAlias(model);
+
+    const up = `create policy ${name} on ${tableRef} for delete ${kind} ${roles} ${usingClause};`;
+    const down = `drop policy ${name} on ${tableRef};`;
+
+    return {
+      create: async () => {
+        await (connection || DB.pool).query(up);
+        return { up, down };
+      },
+      drop: async () => {
+        await (connection || DB.pool).query(down);
+        return { up: down, down: up };
+      },
+    };
+  }
+  static allPolicy(name, model, options, connection) {
+    const roles =
+      options?.roles && Array.isArray(options.roles) && options.roles.length > 0
+        ? `to ${options.roles.join(", ")}`
+        : "";
+
+    const using =
+      options?.using && typeof options.using === "string"
+        ? options.using.startsWith("(")
+          ? options.using
+          : `(${options.using})`
+        : "";
+
+    const check =
+      options?.check && typeof options.check === "string"
+        ? options.check.startsWith("(")
+          ? options.check
+          : `(${options.check})`
+        : "";
+
+    const kind =
+      options?.kind === "restrictive"
+        ? "as restrictive"
+        : options?.kind === "permissive"
+        ? "as permissive"
+        : "";
+
+    const usingClause = using ? ` using ${using}` : "";
+    const checkClause = check ? ` with check ${check}` : "";
+
+    const tableRef = DBManager.toModelSchemaTableAlias(model);
+
+    const up = `create policy ${name} on ${tableRef} for all ${kind} ${roles} ${usingClause} ${checkClause};`;
+    const down = `drop policy ${name} on ${tableRef};`;
+
+    return {
+      create: async () => {
+        await (connection || DB.pool).query(up);
+        return { up, down };
+      },
+      drop: async () => {
+        await (connection || DB.pool).query(down);
+        return { up: down, down: up };
+      },
+    };
+  }
+
   static toModelSchemaTableAlias(model) {
     return `${model?.schema ? `"${model.schema}".` : ""}"${model.table}"`;
   }

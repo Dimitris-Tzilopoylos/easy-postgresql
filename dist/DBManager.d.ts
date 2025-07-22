@@ -1,5 +1,13 @@
 export = DBManager;
 declare class DBManager {
+  static alterSchemaOwner(
+    schemaName: string,
+    owner: string,
+    connection?: any
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
   static createSchema(
     schemaName: string,
     connection?: any,
@@ -12,6 +20,14 @@ declare class DBManager {
     schemaName: string,
     connection?: any,
     existsCheck?: boolean
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
+  static alterTableOwner(
+    model: any,
+    owner: string,
+    connection?: any
   ): Promise<{
     up: string;
     down: string;
@@ -208,6 +224,102 @@ declare class DBManager {
     up: string;
     down: string;
   }>;
+  static enableRLS(
+    model: any,
+    connection?: any
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
+  static disableRLS(
+    model: any,
+    connection?: any
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
+  static enableSchemaRLS(
+    schema: string,
+    connection?: any
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
+  static disableSchemaRLS(
+    schema: string,
+    connection?: any
+  ): Promise<{
+    up: string;
+    down: string;
+  }>;
+  static selectPolicy(
+    name: string,
+    model: any,
+    options?: {
+      roles?: string[];
+      using?: string;
+    },
+    connection?: any
+  ): {
+    create: () => Promise<{ up: string; down: string }>;
+    drop: () => Promise<{ up: string; down: string }>;
+  };
+  static insertPolicy(
+    name: string,
+    model: any,
+    options?: {
+      roles?: string[];
+      using?: string;
+      check?: string;
+      kind?: "restrictive" | "permissive";
+    },
+    connection?: any
+  ): {
+    create: () => Promise<{ up: string; down: string }>;
+    drop: () => Promise<{ up: string; down: string }>;
+  };
+  static updatePolicy(
+    name: string,
+    model: any,
+    options?: {
+      roles?: string[];
+      using?: string;
+      check?: string;
+      kind?: "restrictive" | "permissive";
+    },
+    connection?: any
+  ): {
+    create: () => Promise<{ up: string; down: string }>;
+    drop: () => Promise<{ up: string; down: string }>;
+  };
+  static deletePolicy(
+    name: string,
+    model: any,
+    options?: {
+      roles?: string[];
+      using?: string;
+      check?: string;
+      kind?: "restrictive" | "permissive";
+    },
+    connection?: any
+  ): {
+    create: () => Promise<{ up: string; down: string }>;
+    drop: () => Promise<{ up: string; down: string }>;
+  };
+  static allPolicy(
+    name: string,
+    model: any,
+    options?: {
+      roles?: string[];
+      using?: string;
+      check?: string;
+      kind?: "restrictive" | "permissive";
+    },
+    connection?: any
+  ): {
+    create: () => Promise<{ up: string; down: string }>;
+    drop: () => Promise<{ up: string; down: string }>;
+  };
   static toModelSchemaTableAlias(model: any): string;
   static formatConstraintOrIndexColumns(columns: any[]): any[];
   static toForeignKeyAction(type: any, value?: any): string;
