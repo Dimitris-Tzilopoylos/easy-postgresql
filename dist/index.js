@@ -47,8 +47,10 @@ const {
   notInArray,
   mergeConditions,
 } = require("./conditions");
+const { PgTypes } = require("./pg-types-base");
 
 module.exports = {
+  PgTypes,
   Column,
   CONSTANTS,
   DBManager,

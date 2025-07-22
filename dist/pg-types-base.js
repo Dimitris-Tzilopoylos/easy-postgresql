@@ -1,4 +1,4 @@
-const PgType = {
+const PgTypes = {
   BIGINT: "bigint",
 
   INT8: "int8",
@@ -124,126 +124,125 @@ const PgType = {
   XML: "xml",
 };
 
-const SupportLength = {
-  [PgType.CHARACTER]: true,
-  [PgType.CHAR]: true,
-  [PgType.CHARACTER_VARYING]: true,
-  [PgType.VARCHAR]: true,
-  [PgType.BIT]: true,
-  [PgType.BIT_1]: true,
-  [PgType.BIT_VARYING]: true,
-  [PgType.VARBIT]: true,
-};
+// const SupportLength = {
+//   [PgTypes.CHARACTER]: true,
+//   [PgTypes.CHAR]: true,
+//   [PgTypes.CHARACTER_VARYING]: true,
+//   [PgTypes.VARCHAR]: true,
+//   [PgTypes.BIT]: true,
+//   [PgTypes.BIT_1]: true,
+//   [PgTypes.BIT_VARYING]: true,
+//   [PgTypes.VARBIT]: true,
+// };
 
-const SupportPrecisionScale = {
-  [PgType.NUMERIC]: true,
-  [PgType.DECIMAL]: true,
-};
+// const SupportPrecisionScale = {
+//   [PgTypes.NUMERIC]: true,
+//   [PgTypes.DECIMAL]: true,
+// };
 
-const NotSupportArray = {
-  [PgType.BIGSERIAL]: true,
-  [PgType.SERIAL]: true,
-  [PgType.SERIAL2]: true,
-  [PgType.SERIAL4]: true,
-  [PgType.SERIAL4]: true,
-  [PgType.SMALLSERIAL]: true,
-};
+// const NotSupportArray = {
+//   [PgTypes.BIGSERIAL]: true,
+//   [PgTypes.SERIAL]: true,
+//   [PgTypes.SERIAL2]: true,
+//   [PgTypes.SERIAL4]: true,
+//   [PgTypes.SERIAL4]: true,
+//   [PgTypes.SMALLSERIAL]: true,
+// };
 
-class PgTypeBuilder {
-  constructor(typeDef) {
-    this.typeDef = typeDef;
-    this._length = null;
-    this._precision = null;
-    this._scale = null;
-    this._isArray = false;
-  }
+// class PgTypeBuilder {
+//   constructor(typeDef) {
+//     this.typeDef = typeDef;
+//     this._length = null;
+//     this._precision = null;
+//     this._scale = null;
+//     this._isArray = false;
+//   }
 
-  length(n) {
-    if (!this.typeDef.supportsLength) {
-      throw new Error(`Type "${this.typeDef.name}" does not support length.`);
-    }
-    this._length = n;
-    return this;
-  }
+//   length(n) {
+//     if (!this.typeDef.supportsLength) {
+//       throw new Error(`Type "${this.typeDef.name}" does not support length.`);
+//     }
+//     this._length = n;
+//     return this;
+//   }
 
-  precision(p, s = null) {
-    if (!this.typeDef.supportsPrecision) {
-      throw new Error(
-        `Type "${this.typeDef.name}" does not support precision.`
-      );
-    }
-    this._precision = p;
-    this._scale = s;
-    return this;
-  }
+//   precision(p, s = null) {
+//     if (!this.typeDef.supportsPrecision) {
+//       throw new Error(
+//         `Type "${this.typeDef.name}" does not support precision.`
+//       );
+//     }
+//     this._precision = p;
+//     this._scale = s;
+//     return this;
+//   }
 
-  array() {
-    if (!this.typeDef.supportsArray) {
-      throw new Error(
-        `Type "${this.typeDef.name}" does not support array notation.`
-      );
-    }
-    this._isArray = true;
-    return this;
-  }
+//   array() {
+//     if (!this.typeDef.supportsArray) {
+//       throw new Error(
+//         `Type "${this.typeDef.name}" does not support array notation.`
+//       );
+//     }
+//     this._isArray = true;
+//     return this;
+//   }
 
-  buildTypeString() {
-    let str = this.typeDef.name;
+//   buildTypeString() {
+//     let str = this.typeDef.name;
 
-    if (this._length !== null) {
-      str += `(${this._length})`;
-    } else if (this._precision !== null) {
-      str += `(${this._precision}`;
-      if (this._scale !== null) {
-        str += `, ${this._scale}`;
-      }
-      str += ")";
-    }
+//     if (this._length !== null) {
+//       str += `(${this._length})`;
+//     } else if (this._precision !== null) {
+//       str += `(${this._precision}`;
+//       if (this._scale !== null) {
+//         str += `, ${this._scale}`;
+//       }
+//       str += ")";
+//     }
 
-    if (this._isArray) {
-      str += "[]";
-    }
+//     if (this._isArray) {
+//       str += "[]";
+//     }
 
-    return str;
-  }
+//     return str;
+//   }
 
-  toString() {
-    return this.buildTypeString();
-  }
-}
+//   toString() {
+//     return this.buildTypeString();
+//   }
+// }
 
-class PGTypes {
-  constructor() {
-    this.types = this.__createTypeBuilder();
-  }
+// class PGTypes {
+//   constructor() {
+//     this.types = this.__createTypeBuilder();
+//   }
 
-  __createTypeBuilder() {
-    const types = {};
-    for (const [key, value] of Object.entries(PgType)) {
-      types[key] = () =>
-        new PgTypeBuilder({
-          name: value,
-          supportsArray: !NotSupportArray[value],
-          supportsLength: SupportLength[value],
-          supportsPrecision: SupportPrecisionScale[value],
-        });
-    }
+//   __createTypeBuilder() {
+//     const types = {};
+//     for (const [key, value] of Object.entries(PgTypes)) {
+//       types[key] = () =>
+//         new PgTypeBuilder({
+//           name: value,
+//           supportsArray: !NotSupportArray[value],
+//           supportsLength: SupportLength[value],
+//           supportsPrecision: SupportPrecisionScale[value],
+//         });
+//     }
 
-    return types;
-  }
+//     return types;
+//   }
 
-  extend(key, value) {
-    if (typeof key !== "string") {
-      throw new Error(`Type key should be a string`);
-    }
-    if (typeof value !== "string") {
-      throw new Error(`Type value should be a string`);
-    }
-    key = key.trim();
-    value = value.trim();
-    this.types[key] = () => new PgTypeBuilder(value);
-  }
-}
+//   extend(key, value) {
+//     if (typeof key !== "string") {
+//       throw new Error(`Type key should be a string`);
+//     }
+//     if (typeof value !== "string") {
+//       throw new Error(`Type value should be a string`);
+//     }
+//     key = key.trim();
+//     value = value.trim();
+//     this.types[key] = () => new PgTypeBuilder(value);
+//   }
+// }
 
-const x = new PGTypes();
-x.types
+module.exports = { PgTypes };

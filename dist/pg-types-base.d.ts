@@ -1,6 +1,6 @@
 // Generated .d.ts approximation
 
-declare const PgType: {
+export const PgTypes: {
   BIGINT: string;
   INT8: string;
   BIGSERIAL: string;
@@ -65,48 +65,49 @@ declare const PgType: {
   XML: string;
 };
 
-declare const SupportLength: {
-  [key: string]: boolean;
-};
+// declare const SupportLength: {
+//   [key: string]: boolean;
+// };
 
-declare const SupportPrecisionScale: {
-  [key: string]: boolean;
-};
+// declare const SupportPrecisionScale: {
+//   [key: string]: boolean;
+// };
 
-declare const NotSupportArray: {
-  [key: string]: boolean;
-};
+// declare const NotSupportArray: {
+//   [key: string]: boolean;
+// };
 
-declare class PgTypeBuilder {
-  private typeDef;
-  private _length;
-  private _precision;
-  private _scale;
-  private _isArray;
+// declare class PgTypeBuilder {
+//   private typeDef;
+//   private _length;
+//   private _precision;
+//   private _scale;
+//   private _isArray;
 
-  constructor(typeDef: {
-    name: string;
-    supportsLength?: boolean;
-    supportsPrecision?: boolean;
-    supportsArray?: boolean;
-  });
+//   constructor(typeDef: {
+//     name: string;
+//     supportsLength?: boolean;
+//     supportsPrecision?: boolean;
+//     supportsArray?: boolean;
+//   });
 
-  length(n: number): this;
-  precision(p: number, s?: number | null): this;
-  array(): this;
-  buildTypeString(): string;
-  toString(): string;
-}
+//   length(n: number): this;
+//   precision(p: number, s?: number | null): this;
+//   array(): this;
+//   buildTypeString(): string;
+//   toString(): string;
+// }
 
-declare class PGTypes {
-  types: {
-    [key: string]: () => PgTypeBuilder;
-  };
+// declare class PGTypes {
+//   types: {
+//     [key: string]: () => PgTypeBuilder;
+//   };
 
-  constructor();
-  private __createTypeBuilder;
-  extend(key: string, value: string): void;
-}
+//   constructor();
+//   private __createTypeBuilder;
+//   extend(key: string, value: string): void;
+// }
 
-declare const pgTypesInstance: PGTypes;
-export = pgTypesInstance;
+// declare const pgTypesInstance: PGTypes;
+// export = pgTypesInstance;
+// export = PgTypes;
