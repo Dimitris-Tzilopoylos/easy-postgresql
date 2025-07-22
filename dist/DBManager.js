@@ -790,5 +790,208 @@ class DBManager {
 
     return `on ${type} ${value.toLowerCase()}`;
   }
+
+  static async createRole(roleName, options = {}, connection) {
+    const clauses = [];
+
+    if (options?.login) clauses.push("LOGIN");
+    if (options?.noLogin) clauses.push("NOLOGIN");
+    if (options?.password) clauses.push(`PASSWORD '${options.password}'`);
+
+    if (options?.superuser) clauses.push("SUPERUSER");
+    if (options?.noSuperuser) clauses.push("NOSUPERUSER");
+
+    if (options?.createdb) clauses.push("CREATEDB");
+    if (options?.noCreatedb) clauses.push("NOCREATEDB");
+
+    if (options?.createrole) clauses.push("CREATEROLE");
+    if (options?.noCreaterole) clauses.push("NOCREATEROLE");
+
+    if (options?.inherit === false) clauses.push("NOINHERIT");
+    if (options?.inherit === true) clauses.push("INHERIT");
+
+    if (options?.replication) clauses.push("REPLICATION");
+    if (options?.bypassrls) clauses.push("BYPASSRLS");
+
+    if (typeof options?.connectionLimit === "number")
+      clauses.push(`CONNECTION LIMIT ${options.connectionLimit}`);
+
+    if (options?.validUntil) {
+      clauses.push(`VALID UNTIL '${options.validUntil}'`);
+    }
+
+    if (Array.isArray(options?.inRole) && options.inRole.length > 0) {
+      clauses.push(`IN ROLE ${options.inRole.join(", ")}`);
+    }
+
+    if (Array.isArray(options?.role) && options.role.length > 0) {
+      clauses.push(`ROLE ${options.role.join(", ")}`);
+    }
+
+    if (Array.isArray(options?.admin) && options.admin.length > 0) {
+      clauses.push(`ADMIN ${options.admin.join(", ")}`);
+    }
+
+    const up = `CREATE ROLE ${roleName} ${clauses.join(" ")};`;
+    const down = `DROP ROLE IF EXISTS ${roleName};`;
+    await (connection || DB.pool).query(up);
+    return { up, down };
+  }
+
+  static async dropRole(roleName, connection) {
+    const up = `DROP ROLE IF EXISTS ${roleName};`;
+    const down = `CREATE ROLE ${roleName};`; // minimal rollback
+    await (connection || DB.pool).query(up);
+    return { up, down };
+  }
+
+  static async grantRole(toRole, fromRole, connection) {
+    const up = `GRANT ${fromRole} TO ${toRole};`;
+    const down = `REVOKE ${fromRole} FROM ${toRole};`;
+    await (connection || DB.pool).query(up);
+    return { up, down };
+  }
+
+  static async revokeRole(toRole, fromRole, connection) {
+    const down = `GRANT ${fromRole} TO ${toRole};`;
+    const up = `REVOKE ${fromRole} FROM ${toRole};`;
+    await (connection || DB.pool).query(up);
+    return { up, down };
+  }
+
+  static async grantPrivileges(role, privileges, model, connection) {
+    const up = `GRANT ${privileges.join(
+      ", "
+    )} ON ${DBManager.toModelSchemaTableAlias(model)} TO ${role};`;
+    const down = `REVOKE ${privileges.join(
+      ", "
+    )} ON ${DBManager.toModelSchemaTableAlias(model)} FROM ${role};`;
+    await (connection || DB.pool).query(up);
+    return { up, down };
+  }
+
+  static async revokePrivileges(role, privileges, model, connection) {
+    const down = `GRANT ${privileges.join(
+      ", "
+    )} ON ${DBManager.toModelSchemaTableAlias(model)} TO ${role};`;
+    const up = `REVOKE ${privileges.join(
+      ", "
+    )} ON ${DBManager.toModelSchemaTableAlias(model)} FROM ${role};`;
+    await (connection || DB.pool).query(up);
+    return { up, down };
+  }
+
+  static async alterRole(roleName, options, connection) {
+    const clauses = [];
+
+    if (typeof options?.login === "boolean")
+      clauses.push(options.login ? "LOGIN" : "NOLOGIN");
+
+    if (typeof options?.superuser === "boolean")
+      clauses.push(options.superuser ? "SUPERUSER" : "NOSUPERUSER");
+
+    if (typeof options?.createdb === "boolean")
+      clauses.push(options.createdb ? "CREATEDB" : "NOCREATEDB");
+
+    if (typeof options.createrole === "boolean")
+      clauses.push(options.createrole ? "CREATEROLE" : "NOCREATEROLE");
+
+    if (typeof options?.inherit === "boolean")
+      clauses.push(options.inherit ? "INHERIT" : "NOINHERIT");
+
+    if (typeof options?.bypassrls === "boolean")
+      clauses.push(options.bypassrls ? "BYPASSRLS" : "NOBYPASSRLS");
+
+    if (typeof options?.replication === "boolean")
+      clauses.push(options.replication ? "REPLICATION" : "NOREPLICATION");
+
+    if (typeof options?.connectionLimit === "number")
+      clauses.push(`CONNECTION LIMIT ${options.connectionLimit}`);
+
+    if (typeof options?.validUntil === "string")
+      clauses.push(`VALID UNTIL '${options.validUntil}'`);
+
+    if (typeof options?.password === "string")
+      clauses.push(`PASSWORD '${options.password}'`);
+
+    const up = `ALTER ROLE ${roleName} ${clauses.join(" ")};`;
+    const down = `-- No down migration for ALTER ROLE ${roleName}`;
+    await (connection || DB.pool).query(up);
+    return { up, down };
+  }
+
+  static async createSequence(sequenceName, options, connection) {
+    const qualifiedName = options?.schema
+      ? `${options.schema}.${sequenceName}`
+      : sequenceName;
+
+    const clauses = [];
+    if (options?.increment !== undefined)
+      clauses.push(`INCREMENT BY ${options.increment}`);
+    if (options?.minValue !== undefined)
+      clauses.push(
+        options.minValue === null
+          ? "NO MINVALUE"
+          : `MINVALUE ${options.minValue}`
+      );
+    if (options?.maxValue !== undefined)
+      clauses.push(
+        options.maxValue === null
+          ? "NO MAXVALUE"
+          : `MAXVALUE ${options.maxValue}`
+      );
+    if (options?.start !== undefined)
+      clauses.push(`START WITH ${options.start}`);
+    if (options?.cache !== undefined) clauses.push(`CACHE ${options.cache}`);
+    if (options?.cycle) clauses.push("CYCLE");
+    else clauses.push("NO CYCLE");
+
+    const up = `CREATE SEQUENCE ${qualifiedName} ${clauses.join(" ")};`;
+    const down = `DROP SEQUENCE IF EXISTS ${qualifiedName};`;
+    await (connection || DB.pool).query(up);
+    return { up, down };
+  }
+
+  static async dropSequence(sequenceName, schema, connection) {
+    const qualifiedName = schema ? `${schema}.${sequenceName}` : sequenceName;
+
+    const up = `DROP SEQUENCE IF EXISTS ${qualifiedName};`;
+    const down = `CREATE SEQUENCE ${qualifiedName};`; // minimal rollback
+    await (connection || DB.pool).query(up);
+    return { up, down };
+  }
+
+  static async alterSequence(sequenceName, options, connection) {
+    const clauses = [];
+
+    if (options?.incrementBy !== undefined)
+      clauses.push(`INCREMENT BY ${options.incrementBy}`);
+    if (options?.minValue !== undefined)
+      clauses.push(`MINVALUE ${options.minValue}`);
+    if (options?.noMinValue) clauses.push(`NO MINVALUE`);
+    if (options.maxValue !== undefined)
+      clauses.push(`MAXVALUE ${options.maxValue}`);
+    if (options?.noMaxValue) clauses.push(`NO MAXVALUE`);
+    if (options.restartWith !== undefined)
+      clauses.push(`RESTART WITH ${options.restartWith}`);
+    if (options?.cache !== undefined) clauses.push(`CACHE ${options.cache}`);
+    if (options.cycle !== undefined)
+      clauses.push(options.cycle ? `CYCLE` : `NO CYCLE`);
+
+    const ownerClause = options?.owner
+      ? `ALTER SEQUENCE ${sequenceName} OWNER TO ${options.owner};`
+      : null;
+
+    const upClauses = clauses.length
+      ? `ALTER SEQUENCE ${sequenceName} ${clauses.join(" ")};`
+      : "";
+    const up = [upClauses, ownerClause].filter(Boolean).join("\n");
+
+    // For down migration, we usually can't revert properties without prior state, so we provide a no-op or comment
+    const down = `-- No down migration for ALTER SEQUENCE ${sequenceName}`;
+
+    await (connection || DB.pool).query(up);
+    return { up, down };
+  }
 }
 module.exports = DBManager;

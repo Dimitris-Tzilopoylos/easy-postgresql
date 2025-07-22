@@ -1,4 +1,14 @@
 export = DBManager;
+
+enum PgPrivilege {
+  SELECT = "SELECT",
+  INSERT = "INSERT",
+  UPDATE = "UPDATE",
+  DELETE = "DELETE",
+  TRUNCATE = "TRUNCATE",
+  REFERENCES = "REFERENCES",
+  TRIGGER = "TRIGGER",
+}
 declare class DBManager {
   static alterSchemaOwner(
     schemaName: string,
@@ -320,6 +330,84 @@ declare class DBManager {
     create: () => Promise<{ up: string; down: string }>;
     drop: () => Promise<{ up: string; down: string }>;
   };
+  static createRole(
+    roleName: string,
+    options?: {
+      login?: boolean;
+      noLogin?: boolean;
+      password?: string;
+      superuser?: boolean;
+      noSuperuser?: boolean;
+      createdb?: boolean;
+      noCreatedb?: boolean;
+      createrole?: boolean;
+      noCreaterole?: boolean;
+      inherit?: boolean;
+      replication?: boolean;
+      bypassrls?: boolean;
+      connectionLimit?: number;
+      validUntil?: string; // ISO 8601 or PostgreSQL timestamp string
+      inRole?: string[];
+      role?: string[];
+      admin?: string[];
+    },
+    connection?: any // Replace with your pool/client type, e.g., `PoolClient`
+  ): Promise<{ up: string; down: string }>;
+  static grantRole(
+    toRole: string,
+    fromRole: string,
+    connection?: any
+  ): Promise<{ up: string; down: string }>;
+
+  static revokeRole(
+    toRole: string,
+    fromRole: string,
+    connection?: any
+  ): Promise<{ up: string; down: string }>;
+
+  static grantPrivileges(
+    role: string,
+    privileges: PgPrivilege[],
+    model: any,
+    connection?: any
+  ): Promise<{ up: string; down: string }>;
+
+  static revokePrivileges(
+    role: string,
+    privileges: PgPrivilege[],
+    model: any,
+    connection?: any
+  ): Promise<{ up: string; down: string }>;
+
+  static alterRole(
+    roleName: string,
+    options?: {
+      password?: string;
+      superuser?: boolean;
+      login?: boolean;
+      inherit?: boolean;
+    },
+    connection?: any
+  ): Promise<{ up: string; down: string }>;
+  static async createSequence(
+    sequenceName: string,
+    options?: {
+      increment?: number;
+      minValue?: number | null;
+      maxValue?: number | null;
+      start?: number;
+      cache?: number;
+      cycle?: boolean;
+      schema?: string;
+    },
+    connection?: any
+  ): Promise<{ up: string; down: string }>;
+
+  static async dropSequence(
+    sequenceName: string,
+    schema?: string,
+    connection?: any
+  ): Promise<{ up: string; down: string }>;
   static toModelSchemaTableAlias(model: any): string;
   static formatConstraintOrIndexColumns(columns: any[]): any[];
   static toForeignKeyAction(type: any, value?: any): string;
