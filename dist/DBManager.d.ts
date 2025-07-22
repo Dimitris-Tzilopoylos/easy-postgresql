@@ -1,6 +1,6 @@
 export = DBManager;
 
-enum PgPrivilege {
+declare enum PgPrivilege {
   SELECT = "SELECT",
   INSERT = "INSERT",
   UPDATE = "UPDATE",
@@ -389,7 +389,7 @@ declare class DBManager {
     },
     connection?: any
   ): Promise<{ up: string; down: string }>;
-  static async createSequence(
+  static createSequence(
     sequenceName: string,
     options?: {
       increment?: number;
@@ -403,7 +403,7 @@ declare class DBManager {
     connection?: any
   ): Promise<{ up: string; down: string }>;
 
-  static async dropSequence(
+  static dropSequence(
     sequenceName: string,
     schema?: string,
     connection?: any

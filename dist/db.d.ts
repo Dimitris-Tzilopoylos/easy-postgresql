@@ -1,9 +1,9 @@
 import { Pool } from "pg";
 import Model from "./model";
 
-type LoggerMethod = (...args: any[]) => void;
+declare type LoggerMethod = (...args: any[]) => void;
 
-interface Logger {
+declare interface Logger {
   info: LoggerMethod;
   warn: LoggerMethod;
   error: LoggerMethod;
