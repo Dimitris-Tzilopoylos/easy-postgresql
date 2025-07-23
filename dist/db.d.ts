@@ -1,15 +1,6 @@
 import { Pool } from "pg";
 import Model from "./model";
 
-declare type LoggerMethod = (...args: any[]) => void;
-
-declare interface Logger {
-  info: LoggerMethod;
-  warn: LoggerMethod;
-  error: LoggerMethod;
-  log: LoggerMethod;
-}
-
 export = DB;
 declare class DB {
   static models: {
@@ -17,7 +8,12 @@ declare class DB {
       [z: string]: Model;
     };
   };
-  static logger: Logger;
+  static logger: {
+    info: (...args: any[]) => void;
+    warn: (...args: any[]) => void;
+    error: (...args: any[]) => void;
+    log: (...args: any[]) => void;
+  };
   static logLevel: "info" | "warn" | "error" | "log";
   static modelFactory: any;
   static database: any;
@@ -69,7 +65,12 @@ declare class DB {
   static actions: {
     [x: string]: any;
   };
-  static setLogger(logger: Logger): void;
+  static setLogger(logger: {
+    info: (...args: any[]) => void;
+    warn: (...args: any[]) => void;
+    error: (...args: any[]) => void;
+    log: (...args: any[]) => void;
+  }): void;
   static hasReplicas(): any;
   static roundRobinReplicaPoolRetrieval(): any;
   static connectClient(): Promise<void>;

@@ -7,6 +7,7 @@ const Relation = require("./relation");
 const fs = require("fs");
 const loadTables = require("easy-pg-scanner");
 const path = require("path");
+const { camelCase } = require("change-case");
 const packageName = "test-easy-psql";
 class Postgres {
   constructor({
@@ -82,10 +83,8 @@ class Postgres {
   }
 
   __makeTableClasseName(table) {
-    return table
-      .split("_")
-      .map((x) => x[0].toUpperCase() + (x.slice(1) || ""))
-      .join("");
+    let newTable = camelCase(table).split("");
+    return newTable[0].toUpperCase() + newTable.slice(1).join("");
   }
 
   __makeExportClass(model) {
@@ -135,7 +134,7 @@ class Postgres {
             idx > 0 ? "\t\t\t" : "\n\t\t\t"
           }${relation}: new Relation({\n\t\t\t\talias: "${
             config.alias
-          }",\n\t\t\t\ttype: "${config.type.toLowerCase()}",\n\t\t\t\t,schema: "${
+          }",\n\t\t\t\ttype: "${config.type.toLowerCase()}",\n\t\t\t\tschema: "${
             config.schema || "public"
           }",\n\t\t\t\tfrom_table: "${
             config.from_table || instance.table

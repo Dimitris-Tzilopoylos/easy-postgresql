@@ -1,24 +1,24 @@
-# test-easy-psql
+# easy-psql
 
 ## Description
 
-Welcome to the test-easy-psql documentation! test-easy-psql is a simple intermediary for querying data in PostgreSQL databases. Whether you're a beginner or an experienced developer, this documentation will help you get started with test-easy-psql and leverage its capabilities to interact with your PostgreSQL databases efficiently.
+Welcome to the easy-psql documentation! easy-psql is a simple intermediary for querying data in PostgreSQL databases. Whether you're a beginner or an experienced developer, this documentation will help you get started with easy-psql and leverage its capabilities to interact with your PostgreSQL databases efficiently.
 
 **Note:** This package is intended for personal usage, and no tests have been written for it. Therefore, it is recommended to use it with caution and at your own responsibility. Like any software, there may be unforeseen bugs or issues that could affect your application. It is advisable to thoroughly review the package's functionality and integrate it into your projects with careful consideration of potential risks.
 (This package was developed using nodejs 16)
 
 ## Installation
 
-To install test-easy-psql, you can use npm:
+To install easy-psql, you can use npm:
 
 ```bash
-npm install test-easy-psql
+npm install easy-psql
 ```
 
 ## Establishing Connection with PostgreSQL Database
 
 ```javascript
-const { DB } = require("test-easy-psql");
+const { DB } = require("easy-psql");
 
 DB.registerConnectionConfig({
   user: "postgres",
@@ -35,7 +35,7 @@ DB.registerConnectionConfig({
 ## Defining Models and Relations for PostgreSQL Database
 
 ```javascript
-const { Model, Column, Relation } = require("test-easy-psql");
+const { Model, Column, Relation } = require("easy-psql");
 
 class Role extends Model {
   constructor(connection) {
@@ -215,7 +215,7 @@ const data = await model.find({where:{...},distinct:[...],groupBy:[...],limit:10
 ## Using nested aggregations
 
 ```javascript
-const { Model, Column } = require("test-easy-psql");
+const { Model, Column } = require("easy-psql");
 
 class Role extends Model {
   constructor(connection) {
@@ -471,7 +471,7 @@ DB.onErrorActionAsync(async (error, instance) => {
 ## AutoDiscoverAPI
 
 ```javascript
-const { Postgres, Relation } = require('test-easy-psql');
+const { Postgres, Relation } = require('easy-psql');
 
 const db = new Postgres({
   connectionConfig: {
@@ -486,7 +486,7 @@ const db = new Postgres({
   options: {
       createFiles: false, // create files for the models
       skipIfDirectoryExists: true, // skip files' creation if the specified folder already exists
-      dirname: "test-easy-psql-models", // folder name to create model files
+      dirname: "easy-psql-models", // folder name to create model files
       useESM: false, // true -> use exports / false -> require
       extension: "js", // can be js,ts or mjs
   }
