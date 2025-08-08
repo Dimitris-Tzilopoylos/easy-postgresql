@@ -425,19 +425,19 @@ declare class DB {
     _sum?: any;
     _avg?: any;
   } & T): Promise<
-    (T["_count"] extends true ? { count: number } : {}) &
+    (T["_count"] extends true ? { count: number } : any) &
       (T["_max"] extends Record<string, boolean>
         ? { max: { [K in keyof T["_max"]]: number | null } }
-        : {}) &
+        : any) &
       (T["_min"] extends Record<string, boolean>
         ? { min: { [K in keyof T["_min"]]: number | null } }
-        : {}) &
+        : any) &
       (T["_sum"] extends Record<string, boolean>
         ? { sum: { [K in keyof T["_sum"]]: number | null } }
-        : {}) &
+        : any) &
       (T["_avg"] extends Record<string, boolean>
         ? { avg: { [K in keyof T["_avg"]]: number | null } }
-        : {})
+        : any)
   >;
   aggregateInternal({
     where,
