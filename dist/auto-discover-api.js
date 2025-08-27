@@ -7,8 +7,7 @@ const Relation = require("./relation");
 const fs = require("fs");
 const loadTables = require("easy-pg-scanner");
 const path = require("path");
-const { camelCase } = require("change-case");
-const packageName = "test-easy-psql";
+const packageName = "easy-psql";
 class Postgres {
   constructor({
     connectionConfig,
@@ -83,7 +82,7 @@ class Postgres {
   }
 
   __makeTableClasseName(table) {
-    let newTable = camelCase(table).split("");
+    let newTable = table;
     return newTable[0].toUpperCase() + newTable.slice(1).join("");
   }
 
