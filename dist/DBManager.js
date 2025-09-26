@@ -781,8 +781,9 @@ class DBManager {
   static toForeignKeyAction(type, value) {
     const isValidAction =
       value &&
-      ["cascade", "no action", "restrict"].indexOf(value?.toLowerCase?.()) !==
-        -1;
+      ["cascade", "no action", "restrict", "set default", "set null"].indexOf(
+        value?.toLowerCase?.()
+      ) !== -1;
     if (!isValidAction) {
       return "";
     }

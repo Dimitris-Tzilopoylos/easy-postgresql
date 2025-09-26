@@ -82,8 +82,18 @@ declare class DBManager {
     name: string,
     fromColumns: any[],
     toColumns: any[],
-    onUpdate?: "cascade" | "no action" | "restrict",
-    onDelete?: "cascade" | "no action" | "restrict",
+    onUpdate?:
+      | "cascade"
+      | "no action"
+      | "restrict"
+      | "set default"
+      | "set null",
+    onDelete?:
+      | "cascade"
+      | "no action"
+      | "restrict"
+      | "set default"
+      | "set null",
     connection?: any
   ): Promise<{
     up: string;
@@ -95,8 +105,18 @@ declare class DBManager {
     name: string,
     fromColumns: any[],
     toColumns: any[],
-    onUpdate?: "cascade" | "no action" | "restrict",
-    onDelete?: "cascade" | "no action" | "restrict",
+    onUpdate?:
+      | "cascade"
+      | "no action"
+      | "restrict"
+      | "set default"
+      | "set null",
+    onDelete?:
+      | "cascade"
+      | "no action"
+      | "restrict"
+      | "set default"
+      | "set null",
     connection?: any
   ): Promise<{
     up: string;
