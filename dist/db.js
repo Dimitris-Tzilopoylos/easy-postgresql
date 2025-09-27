@@ -23,6 +23,7 @@ const RawSQL = require("./raw");
 const ValidationService = require("./validation");
 const SQL = require("./sql");
 const pg = require("pg");
+const { IS_BETWEEN_OPERATOR } = require("./constants");
 types.setTypeParser(types.builtins.INT8, (x) => {
   return x && DB.isString(x) && x.length > 16 ? x : parseInt(x);
 });
@@ -1761,6 +1762,14 @@ class DB {
           sql += ` ${WHERE_CLAUSE_OPERATORS[key]} ($${index})`;
           args.push(config);
           index++;
+        } else if (IS_BETWEEN_OPERATOR[key]) {
+          if (!Array.isArray(config) || config.length !== 2) {
+            throw new Error(`${key} value should be an array of length 2`);
+          }
+
+          sql += ` ${WHERE_CLAUSE_OPERATORS[key]} $${index} and $${index + 1}`;
+          args.push(config[0], config[1]);
+          index = index + 2;
         } else {
           if (config instanceof Column) {
             sql += ` ${WHERE_CLAUSE_OPERATORS[key]} ${

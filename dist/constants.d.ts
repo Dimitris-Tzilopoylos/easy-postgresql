@@ -36,6 +36,8 @@ export namespace WHERE_CLAUSE_OPERATORS {
   let _nilike: string;
   let _eq: string;
   let _neq: string;
+  let _between: string;
+  let _nbetween: string;
   let _st_intersects: string;
   let _st_contains: string;
   let _st_within: string;
@@ -91,6 +93,13 @@ export namespace IS_JSON_OPERATOR {
   export { _key_exists_any_1 as _key_exists_any };
   let _key_exists_all_1: boolean;
   export { _key_exists_all_1 as _key_exists_all };
+}
+
+export namespace IS_BETWEEN_OPERATOR {
+  let _between_1: boolean;
+  export { _between_1 as _between };
+  let _nbetween_1: boolean;
+  export { _nbetween_1 as _nbetween };
 }
 export namespace IS_JSON_KEY_OPERATOR {
   let _key_exists_2: boolean;

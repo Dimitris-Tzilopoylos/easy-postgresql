@@ -34,6 +34,8 @@ const WHERE_CLAUSE_OPERATORS = {
   _nilike: " not ilike ",
   _eq: " = ",
   _neq: " <> ",
+  _between: " between ",
+  _nbetween: " not between ",
   ...(IS_POSTGRES && {
     _in: " = any",
     _any: " = any",
@@ -94,6 +96,10 @@ const IS_JSON_OPERATOR = {
   _key_exists: true,
   _key_exists_any: true,
   _key_exists_all: true,
+};
+const IS_BETWEEN_OPERATOR = {
+  _between: true,
+  _nbetween: true,
 };
 const IS_JSON_KEY_OPERATOR = {
   _key_exists: true,
@@ -781,4 +787,5 @@ module.exports = {
   IS_POSTGIS_OPERATOR,
   POSTGIS_DISTANCE_COMPARISON_OPERATORS,
   forUpdateMapper,
+  IS_BETWEEN_OPERATOR,
 };
