@@ -84,6 +84,7 @@ const REQUIRE_ARRAY_TRANSFORMATION = {
   ...(IS_POSTGRES && {
     _any: true,
     _all: true,
+    _nany: true,
   }),
 };
 const REQUIRE_CAST_TO_NULL = {

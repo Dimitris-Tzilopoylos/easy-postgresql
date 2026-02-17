@@ -75,6 +75,8 @@ export namespace REQUIRE_ARRAY_TRANSFORMATION {
   export { _in_1 as _in };
   let _nin_1: boolean;
   export { _nin_1 as _nin };
+  let _nany_1: boolean;
+  export { _nany_1 as _nany };
 }
 export namespace REQUIRE_CAST_TO_NULL {
   let _is_1: boolean;

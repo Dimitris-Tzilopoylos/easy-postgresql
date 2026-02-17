@@ -1,147 +1,340 @@
-// const { Column, Model, Relation, DB } = require("./dist");
+const {
+  Column,
+  Model,
+  Relation,
+  DB,
+  JsonUpdateOperators,
+  JsonWhereClauseOperators,
+  sqlRaw,
+} = require("./dist");
 
-// DB.registerConnectionConfig({
-//   user: "postgres",
-//   password: "password",
-//   database: "postgres",
-//   schema: "public",
-//   port: 5440,
-//   host: "localhost",
-// });
+DB.registerConnectionConfig({
+  user: "postgres",
+  password: "postgres",
+  database: "postgres",
+  schema: "public",
+  port: 5440,
+  host: "localhost",
+});
 
-// DB.enableLog = true;
+DB.enableLog = true;
 
-// class Building extends Model {
-//   constructor(conn) {
-//     super("buildings", conn);
-//   }
+class Building extends Model {
+  constructor(conn) {
+    super("buildings", conn);
+  }
 
-//   columns = {
-//     id: new Column({
-//       name: "id",
-//       type: "text",
-//       defaultValue: "gen_random_uuid()::text",
-//       primary: true,
-//     }),
-//     name: new Column({
-//       name: "name",
-//       type: "text",
-//       nullable: true,
-//     }),
-//   };
+  columns = {
+    id: new Column({
+      name: "id",
+      type: "text",
+      defaultValue: "gen_random_uuid()::text",
+      primary: true,
+    }),
+    name: new Column({
+      name: "name",
+      type: "text",
+      nullable: true,
+    }),
+    config: new Column({
+      name: "config",
+      type: "jsonb",
+      nullable: true,
+    }),
+  };
 
-//   relations = {
-//     spaces: new Relation({
-//       alias: "spaces",
-//       from_table: "buildings",
-//       from_column: "id",
-//       to_table: "spaces",
-//       to_column: "building_id",
-//       type: "array",
-//     }),
-//   };
-// }
+  relations = {
+    spaces: new Relation({
+      alias: "spaces",
+      from_table: "buildings",
+      from_column: "id",
+      to_table: "spaces",
+      to_column: "building_id",
+      type: "array",
+    }),
+  };
+}
 
-// class Sensor extends Model {
-//   constructor(conn) {
-//     super("sensors", conn);
-//   }
+class Sensor extends Model {
+  constructor(conn) {
+    super("sensors", conn);
+  }
 
-//   columns = {
-//     id: new Column({
-//       name: "id",
-//       type: "text",
-//       defaultValue: "gen_random_uuid()::text",
-//     }),
-//     space_id: new Column({
-//       name: "space_id",
-//       type: "text",
-//       nullable: false,
-//     }),
-//     building_id: new Column({
-//       name: "building_id",
-//       type: "text",
-//       nullable: false,
-//     }),
-//     name: new Column({
-//       name: "name",
-//       type: "text",
-//       nullable: true,
-//     }),
-//   };
+  columns = {
+    id: new Column({
+      name: "id",
+      type: "text",
+      defaultValue: "gen_random_uuid()::text",
+    }),
+    space_id: new Column({
+      name: "space_id",
+      type: "text",
+      nullable: false,
+    }),
+    building_id: new Column({
+      name: "building_id",
+      type: "text",
+      nullable: false,
+    }),
+    name: new Column({
+      name: "name",
+      type: "text",
+      nullable: true,
+    }),
+  };
 
-//   relations = {
-//     building: new Relation({
-//       alias: "building",
-//       to_table: "buildings",
-//       to_column: "id",
-//       from_table: "sensors",
-//       from_column: "parent_id",
-//       type: "object",
-//     }),
-//     space: new Relation({
-//       alias: "space",
-//       to_table: "spaces",
-//       to_column: "id",
-//       from_table: "sensors",
-//       from_column: "parent_id",
-//       type: "object",
-//     }),
-//   };
-// }
+  relations = {
+    building: new Relation({
+      alias: "building",
+      to_table: "buildings",
+      to_column: "id",
+      from_table: "sensors",
+      from_column: "parent_id",
+      type: "object",
+    }),
+    space: new Relation({
+      alias: "space",
+      to_table: "spaces",
+      to_column: "id",
+      from_table: "sensors",
+      from_column: "parent_id",
+      type: "object",
+    }),
+  };
+}
 
-// class Space extends Model {
-//   constructor(conn) {
-//     super("spaces", conn);
-//   }
+class Space extends Model {
+  constructor(conn) {
+    super("spaces", conn);
+  }
 
-//   columns = {
-//     id: new Column({
-//       name: "id",
-//       type: "text",
-//       defaultValue: "gen_random_uuid()::text",
-//     }),
-//     name: new Column({
-//       name: "name",
-//       type: "text",
-//       nullable: true,
-//     }),
-//     building_id: new Column({
-//       name: "building_id",
-//       type: "text",
-//       nullable: false,
-//     }),
-//   };
+  columns = {
+    id: new Column({
+      name: "id",
+      type: "text",
+      defaultValue: "gen_random_uuid()::text",
+    }),
+    name: new Column({
+      name: "name",
+      type: "text",
+      nullable: true,
+    }),
+    building_id: new Column({
+      name: "building_id",
+      type: "text",
+      nullable: false,
+    }),
+  };
 
-//   relations = {
-//     building: new Relation({
-//       alias: "building",
-//       to_table: "buildings",
-//       to_column: "id",
-//       from_table: "spaces",
-//       from_column: "building_id",
-//       type: "object",
-//     }),
-//     sensors: new Relation({
-//       alias: "sensors",
-//       to_table: "sensors",
-//       to_column: ["space_id", "building_id"],
-//       from_table: "spaces",
-//       from_column: ["id", "building_id"],
-//       type: "array",
-//     }),
-//   };
-// }
+  relations = {
+    building: new Relation({
+      alias: "building",
+      to_table: "buildings",
+      to_column: "id",
+      from_table: "spaces",
+      from_column: "building_id",
+      type: "object",
+    }),
+    sensors: new Relation({
+      alias: "sensors",
+      to_table: "sensors",
+      to_column: ["space_id", "building_id"],
+      from_table: "spaces",
+      from_column: ["id", "building_id"],
+      type: "array",
+    }),
+  };
+}
 
-// DB.register(Building);
-// DB.register(Space);
-// DB.register(Sensor);
+DB.register(Building);
+DB.register(Space);
+DB.register(Sensor);
 
-// const b = new Building();
+const b = new Building();
 
-// b.aggregate({
-//   _count: true,
-//   _min: { id: true },
-// }).then((res) => {
-//   console.log(res.min.id);
-// });
+// Sequence of calls implementing all JSONB operators, then throw to rollback
+b.withTransaction(async () => {
+  // Ensure a row exists to operate on
+  const row = await b.insert({ name: "jsonb-ops-test" });
+  const id = sqlRaw((args) => {
+    return ["exists (SELECT id FROM buildings WHERE name = %v)", [row.name]];
+  });
+
+  // --- JSONB update operators ---
+  await b.update({
+    update: {
+      config: JsonUpdateOperators.setJsonb("config", "name", "test", true),
+    },
+    where: { id },
+  });
+
+  await b.update({
+    update: {
+      config: JsonUpdateOperators.mergeJsonb("config", {
+        tags: ["a"],
+        count: 0,
+        flag: false,
+      }),
+    },
+    where: { id },
+  });
+
+  await b.update({
+    update: {
+      config: JsonUpdateOperators.arrayAppendJsonb("config", "tags", "b"),
+    },
+    where: { id },
+  });
+
+  await b.update({
+    update: {
+      config: JsonUpdateOperators.arrayPrependJsonb("config", "tags", "z"),
+    },
+    where: { id },
+  });
+
+  await b.update({
+    update: {
+      config: JsonUpdateOperators.arrayMultiAppendJsonb("config", "tags", [
+        "c",
+        "d",
+      ]),
+    },
+    where: { id },
+  });
+
+  await b.update({
+    update: {
+      config: JsonUpdateOperators.arrayMultiPrependJsonb("config", "tags", [
+        "y",
+        "x",
+      ]),
+    },
+    where: { id },
+  });
+
+  await b.update({
+    update: {
+      config: JsonUpdateOperators.insertJsonb(
+        "config",
+        ["tags", "2"],
+        "inserted",
+        true,
+      ),
+    },
+    where: { id },
+  });
+
+  await b.update({
+    update: {
+      config: JsonUpdateOperators.counterJsonb("config", "count", 1),
+    },
+    where: { id },
+  });
+
+  await b.update({
+    update: {
+      config: JsonUpdateOperators.booleanToggleJsonb("config", "flag"),
+    },
+    where: { id },
+  });
+
+  await b.update({
+    update: {
+      config: JsonUpdateOperators.arrayRemoveAtJsonb("config", "tags", 0),
+    },
+    where: { id },
+  });
+
+  await b.update({
+    update: {
+      config: JsonUpdateOperators.unsetJsonb("config", "name"),
+    },
+    where: { id },
+  });
+
+  // --- JSONB where-clause operators (used in conditions) ---
+  await b.update({
+    update: { name: "after-equals" },
+    where: {
+      config: JsonWhereClauseOperators.equalsJsonb("config", "count", 1),
+    },
+  });
+
+  await b.update({
+    update: { name: "after-not-equals" },
+    where: {
+      config: JsonWhereClauseOperators.notEqualsJsonb("config", "flag", false),
+    },
+  });
+
+  await b.update({
+    update: { name: "after-gt" },
+    where: {
+      config: JsonWhereClauseOperators.greaterThanJsonb("config", "count", 0),
+    },
+  });
+
+  await b.update({
+    update: { name: "after-gte" },
+    where: {
+      config: JsonWhereClauseOperators.greaterThanOrEqualJsonb(
+        "config",
+        "count",
+        1,
+      ),
+    },
+  });
+
+  await b.update({
+    update: { name: "after-lt" },
+    where: {
+      config: JsonWhereClauseOperators.lessThanJsonb("config", "count", 10),
+    },
+  });
+
+  await b.update({
+    update: { name: "after-lte" },
+    where: {
+      config: JsonWhereClauseOperators.lessThanOrEqualJsonb(
+        "config",
+        "count",
+        1,
+      ),
+    },
+  });
+
+  await b.update({
+    update: { name: "after-contains" },
+    where: {
+      config: JsonWhereClauseOperators.containsJsonb("config", "tags", [
+        "a",
+        "b",
+      ]),
+    },
+  });
+
+  await b.update({
+    update: { name: "after-contained-in" },
+    where: {
+      config: JsonWhereClauseOperators.containedInJsonb("config", "tags", [
+        "a",
+        "b",
+        "c",
+        "d",
+        "z",
+        "y",
+        "x",
+        "inserted",
+      ]),
+    },
+  });
+
+  throw new Error("JSONB operators test complete (intentional rollback)");
+})
+  .then((Res) => {
+    console.log(Res);
+  })
+  .catch((error) => {
+    console.error(error);
+  });

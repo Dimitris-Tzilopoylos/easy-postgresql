@@ -48,8 +48,16 @@ const {
   mergeConditions,
 } = require("./conditions");
 const { PgTypes } = require("./pg-types-base");
+const {
+  JsonUpdateOperators,
+  JsonWhereClauseOperators,
+} = require("./json-operators");
+const { sqlRaw } = require("./sql-raw");
 
 module.exports = {
+  sqlRaw,
+  JsonUpdateOperators,
+  JsonWhereClauseOperators,
   PgTypes,
   Column,
   CONSTANTS,

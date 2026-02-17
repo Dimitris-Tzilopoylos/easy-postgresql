@@ -11,6 +11,11 @@ import RawSQL = require("./raw");
 import Builder = require("./builder");
 import SQL = require("./sql");
 import Postgres = require("./auto-discover-api");
+import {
+  JsonWhereClauseOperators,
+  JsonUpdateOperators,
+} from "./json-operators";
+import { sqlRaw } from "./sql-raw";
 export {
   Column,
   CONSTANTS,
@@ -25,4 +30,7 @@ export {
   Builder,
   SQL,
   Postgres,
+  JsonWhereClauseOperators,
+  JsonUpdateOperators,
+  sqlRaw,
 };
