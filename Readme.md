@@ -108,6 +108,73 @@ DB.register(User);
 DB.register(Role);
 ```
 
+## JSON / JSONB path helpers
+
+For `json` and `jsonb` columns you can generate fragments for **updates** and **where** clauses. Import `JsonUpdateOperators` and `JsonWhereClauseOperators` from `easy-psql`. Each method returns an internal `SQL` object that the ORM expands when you pass it as a column value in `update` or `where`.
+
+Use **`…Jsonb`** methods when the underlying column type is **`jsonb`**, and **`…Json`** when it is **`json`** (plain JSON). The `json` variants use different casts and operators in PostgreSQL, so pick the suffix that matches the column type.
+
+### Update helpers (`JsonUpdateOperators`)
+
+| Method | Purpose |
+| -------- | -------- |
+| `setJsonb(column, path, value, createMissingKeys?)` | `JSONB_SET` |
+| `unsetJsonb(column, path)` / `unsetJson(column, path)` | delete key or path (`jsonb` / `json` delete operators) |
+| `insertJsonb(column, path, value, insertAfter?)` | `jsonb_insert` |
+| `mergeJsonb(column, value)` | merge object with `\|\|` |
+| `arrayAppendJsonb`, `arrayPrependJsonb` | append / prepend one element to an array at `path` |
+| `arrayMultiAppendJsonb`, `arrayMultiPrependJsonb` | append / prepend multiple elements |
+| `arrayRemoveAtJsonb(column, path, index)` | remove array element by index |
+| `counterJsonb(column, path, delta?)` | numeric increment at path |
+| `booleanToggleJsonb(column, path)` | flip a boolean at path |
+
+`path` is either a string key or a string array for nested paths (e.g. `['tags', '0']`).
+
+### Where helpers (`JsonWhereClauseOperators`)
+
+| Method | Typical use |
+| -------- | ----------- |
+| `equalsJsonb` / `equalsJson`, `notEqualsJsonb` / `notEqualsJson` | equality on extracted JSON value |
+| `greaterThanJsonb` / `greaterThanJson`, `greaterThanOrEqual…` | ordered comparisons |
+| `lessThanJsonb` / `lessThanJson`, `lessThanOrEqual…` | ordered comparisons |
+| `containsJsonb` / `containsJson` | any of the given strings exists as key or array element (`?|`); pass a **string array** (not a JSON string) |
+| `containedInJsonb` / `containedInJson` | left JSON is contained in right (`<@`) |
+
+Example:
+
+```javascript
+const {
+  DB,
+  Model,
+  Column,
+  JsonUpdateOperators,
+  JsonWhereClauseOperators,
+} = require("easy-psql");
+
+class Building extends Model {
+  constructor(conn) {
+    super("buildings", conn);
+  }
+  columns = {
+    id: new Column({ name: "id", type: "text", primary: true }),
+    config: new Column({ name: "config", type: "jsonb", nullable: true }),
+  };
+}
+DB.register(Building);
+
+const b = new Building();
+
+await b.update({
+  update: {
+    config: JsonUpdateOperators.mergeJsonb("config", { version: 1 }),
+  },
+  where: {
+    config: JsonWhereClauseOperators.equalsJsonb("config", "version", 1),
+  },
+});
+```
+
+
 ## Basic examples
 
 ```javascript

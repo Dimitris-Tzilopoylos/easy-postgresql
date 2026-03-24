@@ -166,12 +166,12 @@ class JSONBCounterOperator extends JSONBaseOperator {
   toSQL() {
     return new SQL((args) => {
       const col = this.toAliasedColumn(args);
-      const [path, isArray] = this.__toPath(this.path);
+      const path = this.path;
       return [
-        `${col} = jsonb_set(
+        `jsonb_set(
           ${col},
           %v::text[],
-          ((COALESCE(${col}#>%v::text[], '0')::numeric) + ${this.delta})::jsonb,
+          to_jsonb((COALESCE(${col}#>%v::text[], '0')::numeric) + ${this.delta}),
           true
         )`,
         [path, path],
@@ -188,13 +188,13 @@ class JSONBBooleanToggleOperator extends JSONBaseOperator {
   toSQL() {
     return new SQL((args) => {
       const col = this.toAliasedColumn(args);
-      const [path, isArray] = this.__toPath(this.path);
+      const path = this.path;
 
       return [
-        `${col} = jsonb_set(
+        `jsonb_set(
           ${col},
           %v::text[],
-          (NOT COALESCE(${col}#>%v::text[], 'false')::boolean)::jsonb,
+          to_jsonb(NOT COALESCE(${col}#>%v::text[], 'false')::boolean),
           true
         )`,
         [path, path],
@@ -214,7 +214,7 @@ class JSONBArrayMultiAppendOperator extends JSONBaseOperator {
       const col = this.toAliasedColumn(args);
       const jsonValues = JSONSerializer.jsonb(this.values);
       return [
-        `${col} = jsonb_set(
+        `jsonb_set(
           ${col},
           %v::text[],
           COALESCE(${col}#>%v::text[], '[]'::jsonb) || %v::jsonb,
@@ -259,16 +259,10 @@ class JSONBArrayMultiPrependOperator extends JSONBaseOperator {
     return new SQL((args) => {
       const col = this.toAliasedColumn(args);
       const jsonValues = JSONSerializer.jsonb(this.values);
-      const [path, isArray] = this.__toPath(this.path);
-
-      if (!isArray) {
-        throw new Error(
-          "JSONBArrayMultiPrependOperator requires a JSONB array path",
-        );
-      }
+      const path = this.path;
 
       return [
-        `${col} = jsonb_set(
+        `jsonb_set(
           ${col},
           %v::text[],
           %v::jsonb || COALESCE(${col}#>%v::text[], '[]'::jsonb),
@@ -289,16 +283,10 @@ class JSONBArrayRemoveAtOperator extends JSONBaseOperator {
   toSQL() {
     return new SQL((args) => {
       const col = this.toAliasedColumn(args);
-      const [path, isArray] = this.__toPath(this.path);
-
-      if (!isArray) {
-        throw new Error(
-          "JSONBArrayRemoveAtOperator requires a JSONB array path",
-        );
-      }
+      const path = this.path;
 
       return [
-        `${col} = jsonb_set(
+        `jsonb_set(
           ${col},
           %v::text[],
           (${col}#>%v::text[]) - ${this.index},
@@ -478,11 +466,37 @@ class JSONBContainsOperator extends JSONBCompareOperator {
   constructor(column, path, value) {
     super(column, path, value, "?|");
   }
+
+  toSQL() {
+    return new SQL((args) => {
+      const col = this.toAliasedColumn(args);
+      const [path, pathIsMulti] = this.__toPath(this.path);
+      const accessor = pathIsMulti ? `#>` : `->`;
+      const formattedPath = pathIsMulti ? `%v::text[]` : `'${path}'`;
+      const textKeys = Array.isArray(this.value) ? this.value : [this.value];
+      const stmt = `${col}${accessor}${formattedPath} ?| %v::text[]`;
+      const bindArgs = pathIsMulti ? [path, textKeys] : [textKeys];
+      return [stmt, bindArgs];
+    });
+  }
 }
 
 class JSONContainsOperator extends JSONCompareOperator {
   constructor(column, path, value) {
     super(column, path, value, "?|");
+  }
+
+  toSQL() {
+    return new SQL((args) => {
+      const col = this.toAliasedColumn(args);
+      const [path, pathIsMulti] = this.__toPath(this.path);
+      const accessor = pathIsMulti ? `#>` : `->`;
+      const formattedPath = pathIsMulti ? `%v::text[]` : `'${path}'`;
+      const textKeys = Array.isArray(this.value) ? this.value : [this.value];
+      const stmt = `${col}${accessor}${formattedPath}::jsonb ?| %v::text[]`;
+      const bindArgs = pathIsMulti ? [path, textKeys] : [textKeys];
+      return [stmt, bindArgs];
+    });
   }
 }
 
