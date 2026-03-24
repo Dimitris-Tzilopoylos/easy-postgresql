@@ -244,13 +244,13 @@ class DB {
   }
   async setCurrentSetting(name, value, isLocal) {
     return await this.raw(
-      `select set_config('${name}', '${value}', ${isLocal} ? true : false);`
+      `select set_config('${name}', '${value}', ${isLocal} ? true : false);`,
     );
   }
   async setCurrentSettingParametrized(name, value, isLocal) {
     return await this.raw(
       `select set_config($1,$2, ${isLocal} ? true : false);`,
-      [name, value]
+      [name, value],
     );
   }
   async withCurrentSetting(name, value, cb) {
@@ -314,13 +314,13 @@ class DB {
     const modelColumnsStr = this.getModelColumnsCommaSeperatedString(
       alias,
       select,
-      extras
+      extras,
     );
     const selectColumnsStr = [modelColumnsStr]
       .concat(
         Object.keys(include).map(
-          (alias, idx) => `${this.makeDepthAlias(alias, 1 + idx)}.${alias}`
-        )
+          (alias, idx) => `${this.makeDepthAlias(alias, 1 + idx)}.${alias}`,
+        ),
       )
       .join(",");
     let sql = `select coalesce(json_agg(${alias}),'[]')${
@@ -333,7 +333,7 @@ class DB {
             from (
               select ${this.makeDistinctOn(
                 distinct,
-                alias
+                alias,
               )} ${modelColumnsStr} from "${this.schema}"."${
       this.table
     }" ${alias}`;
@@ -361,20 +361,26 @@ class DB {
           : self.makeDepthAlias(relation.alias, depth + i);
         const coalesceFallback = relation.type === "object" ? "null" : "[]";
         const coalesceAppendex = relation.type === "object" ? "->0" : "";
-        const modelColumnsStr =
-          currentModel.getModelColumnsCommaSeperatedString(
-            depthAlias,
-            config?.select,
-            config?.extras
-          );
-        const { distinct, groupBy, orderBy, where, include, limit, offset } =
-          DB.isObject(config) ? config : {};
+        const modelColumnsStr = currentModel.getModelColumnsCommaSeperatedString(
+          depthAlias,
+          config?.select,
+          config?.extras,
+        );
+        const {
+          distinct,
+          groupBy,
+          orderBy,
+          where,
+          include,
+          limit,
+          offset,
+        } = DB.isObject(config) ? config : {};
         const selectColumnsStr = [modelColumnsStr]
           .concat(
             Object.keys(include || {}).map(
               (alias, idx) =>
-                `${self.makeDepthAlias(alias, depth + 1 + idx)}.${alias}`
-            )
+                `${self.makeDepthAlias(alias, depth + 1 + idx)}.${alias}`,
+            ),
           )
           .join(",");
         if (isAggregate) {
@@ -382,7 +388,7 @@ class DB {
             ...config,
             where: currentModel._mergeRelationalWhere(
               config.where || {},
-              relation.where || {}
+              relation.where || {},
             ),
             alias: depthAlias,
             relationAlias: relation.alias,
@@ -402,7 +408,7 @@ class DB {
               from (
                 select ${currentModel.makeDistinctOn(
                   distinct,
-                  depthAlias
+                  depthAlias,
                 )} ${modelColumnsStr} from "${currentModel?.schema}"."${
             currentModel.table
           }" ${depthAlias} `;
@@ -411,7 +417,7 @@ class DB {
           currentModel,
           include,
           depth + 1,
-          depthAlias
+          depthAlias,
         );
         const [whereClauseStr, qArgs, idx] = currentModel.makeWhereClause(
           currentModel,
@@ -419,7 +425,7 @@ class DB {
           index,
           depthAlias,
           false,
-          false
+          false,
         );
         args.push(...qArgs);
         index = idx;
@@ -427,19 +433,19 @@ class DB {
         const [orderByStr, orderByArgs, orderByIndx] = currentModel.makeOrderBy(
           orderBy,
           index,
-          depthAlias
+          depthAlias,
         );
         args.push(...orderByArgs);
         index = orderByIndx;
         const [limitStr, limitArgs, idxLimit] = currentModel.makeLimit(
           limit,
-          index
+          index,
         );
         index = idxLimit;
         args.push(...limitArgs);
         const [offsetStr, offsetArgs, idxOffset] = currentModel.makeOffset(
           offset,
-          index
+          index,
         );
         args.push(...offsetArgs);
         index = idxOffset;
@@ -448,13 +454,13 @@ class DB {
             where ${currentModel.makeRelationalWhereAliases(
               prevAlias,
               depthAlias,
-              relation
+              relation,
             )} ${whereClauseStr} ${groupByStr} ${orderByStr} ${limitStr} ${offsetStr} ) ${depthAlias}  ${appendSql} ) ${depthAlias} ) as ${depthAlias} on true `;
         } else {
           sql += ` where ${currentModel.makeRelationalWhereAliases(
             prevAlias,
             depthAlias,
-            relation
+            relation,
           )} ${whereClauseStr} ${groupByStr} )   as ${depthAlias} on true `;
         }
       }
@@ -466,7 +472,7 @@ class DB {
       index,
       alias,
       true,
-      true
+      true,
     );
     index = idx;
     args.push(...whereArgs);
@@ -474,7 +480,7 @@ class DB {
     const [orderByStr, orderByArgs, orderByIndx] = this.makeOrderBy(
       orderBy,
       index,
-      alias
+      alias,
     );
     args.push(...orderByArgs);
     index = orderByIndx;
@@ -485,7 +491,7 @@ class DB {
     args.push(...offsetArgs);
     index = idxOffset;
     sql += ` ${whereClauseStr} ${groupByStr} ${orderByStr} ${limitStr} ${offsetStr} ${this.forUpdateResolve(
-      forUpdate
+      forUpdate,
     )}) ${alias} `;
     sql += makeQuery(this, include, depth + 1, alias);
     sql += ` ) ${alias}`;
@@ -561,7 +567,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.SELECT,
           result,
-          this
+          this,
         );
       }
       if (
@@ -572,7 +578,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.SELECT,
           result,
-          this
+          this,
         );
       }
       if (DB.asyncActionExists(DB.EventNameSpaces.SELECT)) {
@@ -586,7 +592,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
-          this
+          this,
         );
       }
       if (
@@ -597,7 +603,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
-          this
+          this,
         );
       }
       if (DB.asyncActionExists(DB.EventNameSpaces.ERROR)) {
@@ -653,7 +659,7 @@ class DB {
       const modelColumnsStr = this.getModelColumnsCommaSeperatedString(
         alias,
         select,
-        extras
+        extras,
       );
       let hasInclude = false;
 
@@ -669,7 +675,7 @@ class DB {
             return `coalesce(json_agg(${this.makeDepthAlias(alias, 1 + idx)}${
               isAggregate ? `.${alias}` : ""
             })${coalesceAppendex},'${coalesceFallback}') as "${alias}"`;
-          })
+          }),
         )
         .join(",");
       let sql = `select  ${selectColumnsStr} from "${this.schema}"."${this.table}"   ${alias} `;
@@ -697,14 +703,20 @@ class DB {
             : self.makeDepthAlias(relation.alias, depth + i);
           const coalesceFallback = relation.type === "object" ? "null" : "[]";
           const coalesceAppendex = relation.type === "object" ? "->0" : "";
-          const modelColumnsStr =
-            currentModel.getModelColumnsCommaSeperatedString(
-              depthAlias,
-              config?.select,
-              config?.extras
-            );
-          const { distinct, groupBy, orderBy, where, include, limit, offset } =
-            DB.isObject(config) ? config : {};
+          const modelColumnsStr = currentModel.getModelColumnsCommaSeperatedString(
+            depthAlias,
+            config?.select,
+            config?.extras,
+          );
+          const {
+            distinct,
+            groupBy,
+            orderBy,
+            where,
+            include,
+            limit,
+            offset,
+          } = DB.isObject(config) ? config : {};
           let hasInclude = false;
           const selectColumnsStr = [modelColumnsStr]
             .concat(
@@ -712,9 +724,9 @@ class DB {
                 hasInclude = true;
                 return `coalesce(json_agg(${self.makeDepthAlias(
                   alias,
-                  depth + 1 + idx
+                  depth + 1 + idx,
                 )})${coalesceAppendex},'${coalesceFallback}') as ${alias}`;
-              })
+              }),
             )
             .join(",");
           if (isAggregate) {
@@ -734,7 +746,7 @@ class DB {
             currentModel,
             include,
             depth + 1,
-            depthAlias
+            depthAlias,
           );
           const [whereClauseStr, qArgs, idx] = currentModel.makeWhereClause(
             currentModel,
@@ -742,24 +754,27 @@ class DB {
             index,
             depthAlias,
             false,
-            false
+            false,
           );
           args.push(...qArgs);
           index = idx;
           // const groupByStr = currentModel.makeGroupBy(groupBy, depthAlias);
-          const [orderByStr, orderByArgs, orderByIndx] =
-            currentModel.makeOrderBy(orderBy, index, depthAlias);
+          const [
+            orderByStr,
+            orderByArgs,
+            orderByIndx,
+          ] = currentModel.makeOrderBy(orderBy, index, depthAlias);
           args.push(...orderByArgs);
           index = orderByIndx;
           const [limitStr, limitArgs, idxLimit] = currentModel.makeLimit(
             limit,
-            index
+            index,
           );
           index = idxLimit;
           args.push(...limitArgs);
           const [offsetStr, offsetArgs, idxOffset] = currentModel.makeOffset(
             offset,
-            index
+            index,
           );
           args.push(...offsetArgs);
           index = idxOffset;
@@ -769,7 +784,7 @@ class DB {
             where ${currentModel.makeRelationalWhereAliases(
               prevAlias,
               depthAlias,
-              relation
+              relation,
             )} ${whereClauseStr} 
              ${
                hasInclude ? `group by ${modelColumnsStr}` : ""
@@ -778,7 +793,7 @@ class DB {
             sql += ` ${appendSql} where ${currentModel.makeRelationalWhereAliases(
               prevAlias,
               depthAlias,
-              relation
+              relation,
             )} ${whereClauseStr}  )   ${depthAlias} on  true  `;
           }
         }
@@ -790,7 +805,7 @@ class DB {
         index,
         alias,
         true,
-        true
+        true,
       );
       index = idx;
       args.push(...whereArgs);
@@ -798,7 +813,7 @@ class DB {
       const [orderByStr, orderByArgs, orderByIndx] = this.makeOrderBy(
         orderBy,
         index,
-        alias
+        alias,
       );
       args.push(...orderByArgs);
       index = orderByIndx;
@@ -812,7 +827,7 @@ class DB {
       sql += ` ${whereClauseStr}  ${
         hasInclude ? `group by ${modelColumnsStr}` : ""
       } ${orderByStr} ${limitStr} ${offsetStr}  ${this.forUpdateResolve(
-        forUpdate
+        forUpdate,
       )} `;
 
       sql += ` `;
@@ -822,7 +837,7 @@ class DB {
       const { rows: result } = await this.raw(
         sql,
         args,
-        !!this.connection || !DB.hasReplicas()
+        !!this.connection || !DB.hasReplicas(),
       );
       if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.SELECT)) {
         DB.executeEvent(
@@ -830,7 +845,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.SELECT,
           result,
-          this
+          this,
         );
       }
       if (
@@ -841,7 +856,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.SELECT,
           result,
-          this
+          this,
         );
       }
       if (DB.asyncActionExists(DB.EventNameSpaces.SELECT)) {
@@ -855,7 +870,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
-          this
+          this,
         );
       }
       if (
@@ -866,7 +881,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
-          this
+          this,
         );
       }
       if (DB.asyncActionExists(DB.EventNameSpaces.ERROR)) {
@@ -881,8 +896,11 @@ class DB {
     }
     try {
       let { onConflict, returning = true, ...rest } = args;
-      const [modelPayload, relationalPayload, hasRelations] =
-        this.splitRelationalAndModelColumnsInput(rest);
+      const [
+        modelPayload,
+        relationalPayload,
+        hasRelations,
+      ] = this.splitRelationalAndModelColumnsInput(rest);
 
       if (hasRelations) {
         returning = true;
@@ -890,7 +908,7 @@ class DB {
       const [query, qArgs] = this.buildInsertQuery(
         modelPayload,
         onConflict,
-        returning
+        returning,
       );
       if (DB.enableLog) {
         DB.log(query, qArgs);
@@ -916,7 +934,7 @@ class DB {
           }
           if (relation.type === "object" && Array.isArray(insertInput)) {
             throw new Error(
-              "relation type object cannot accept an array as input"
+              "relation type object cannot accept an array as input",
             );
           }
           if (relation.type === "array" && !Array.isArray(insertInput)) {
@@ -939,12 +957,14 @@ class DB {
             }
 
             const { onConflict, ...rest } = value;
-            const [modelPayload, relationalPayload] =
-              insertionModel.splitRelationalAndModelColumnsInput(rest);
+            const [
+              modelPayload,
+              relationalPayload,
+            ] = insertionModel.splitRelationalAndModelColumnsInput(rest);
             const [query, args] = insertionModel.buildInsertQuery(
               modelPayload,
               onConflict,
-              returning
+              returning,
             );
             if (DB.enableLog) {
               DB.log(query, args);
@@ -953,7 +973,7 @@ class DB {
             const childrenResult = await insertChildren(
               insertionModel,
               result,
-              relationalPayload
+              relationalPayload,
             );
             if (Object.keys(childrenResult)?.length) {
               Object.assign(result, childrenResult);
@@ -971,7 +991,7 @@ class DB {
       const childrenResult = await insertChildren(
         this,
         result,
-        relationalPayload
+        relationalPayload,
       );
       if (Object.keys(childrenResult)?.length) {
         Object.assign(result, childrenResult);
@@ -994,7 +1014,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.INSERT,
           result,
-          this
+          this,
         );
       }
       if (
@@ -1005,7 +1025,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.INSERT,
           result,
-          this
+          this,
         );
       }
       if (DB.asyncActionExists(DB.EventNameSpaces.INSERT)) {
@@ -1020,7 +1040,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
-          this
+          this,
         );
       }
       if (
@@ -1031,7 +1051,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
-          this
+          this,
         );
       }
       if (DB.asyncActionExists(DB.EventNameSpaces.ERROR)) {
@@ -1064,7 +1084,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.INSERT,
           result,
-          this
+          this,
         );
       }
       if (
@@ -1075,7 +1095,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.INSERT,
           result,
-          this
+          this,
         );
       }
       if (DB.asyncActionExists(DB.EventNameSpaces.INSERT)) {
@@ -1090,7 +1110,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
-          this
+          this,
         );
       }
       if (
@@ -1101,7 +1121,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
-          this
+          this,
         );
       }
       if (DB.asyncActionExists(DB.EventNameSpaces.ERROR)) {
@@ -1119,7 +1139,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.INSERT,
           result,
-          this
+          this,
         );
       }
       if (
@@ -1130,7 +1150,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.INSERT,
           result,
-          this
+          this,
         );
       }
       if (DB.asyncActionExists(DB.EventNameSpaces.INSERT)) {
@@ -1144,7 +1164,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
-          this
+          this,
         );
       }
       if (
@@ -1155,7 +1175,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
-          this
+          this,
         );
       }
       if (DB.asyncActionExists(DB.EventNameSpaces.ERROR)) {
@@ -1177,7 +1197,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.INSERT,
           result,
-          this
+          this,
         );
       }
       if (
@@ -1188,7 +1208,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.INSERT,
           result,
-          this
+          this,
         );
       }
       if (DB.asyncActionExists(DB.EventNameSpaces.INSERT)) {
@@ -1202,7 +1222,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
-          this
+          this,
         );
       }
       if (
@@ -1213,7 +1233,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
-          this
+          this,
         );
       }
       if (DB.asyncActionExists(DB.EventNameSpaces.ERROR)) {
@@ -1228,12 +1248,13 @@ class DB {
         if (SELF_UPDATE_OPERATORS[key]) {
           if (!DB.isObject(value)) {
             throw new Error(
-              "self update operators should have an object value"
+              "self update operators should have an object value",
             );
           }
 
-          const [selfUpdateColumns] =
-            this.splitRelationalAndModelColumnsInput(value);
+          const [selfUpdateColumns] = this.splitRelationalAndModelColumnsInput(
+            value,
+          );
 
           acc[0].push(
             ...Object.entries(selfUpdateColumns).map(([c, val]) => {
@@ -1242,14 +1263,14 @@ class DB {
               }`;
               acc[1].push(val);
               return sql;
-            })
+            }),
           );
         } else {
           if (this.isGeospatialColumn(key)) {
             const [str, args, _] = this.getGeospatialColumnValueForStatement(
               key,
               value,
-              acc[1].length
+              acc[1].length,
             );
             acc[0].push(`"${key}" = ${str}`);
             acc[1].push(...args);
@@ -1275,14 +1296,14 @@ class DB {
 
         return acc;
       },
-      [[], []]
+      [[], []],
     );
   }
   async update({ update, where = {}, returning = true }) {
     try {
       const [modelColumns] = this.splitRelationalAndModelColumnsInput(
         update,
-        Object.keys(SELF_UPDATE_OPERATORS)
+        Object.keys(SELF_UPDATE_OPERATORS),
       );
       const [columns, qArgs] = this.buildUpdateSetOperation(modelColumns, 0);
       const [whereStr, whereArgs] = this.makeWhereClause(
@@ -1291,10 +1312,10 @@ class DB {
         qArgs.length + 1,
         this.table,
         true,
-        true
+        true,
       );
       const sql = `update "${this.schema}"."${this.table}" set ${columns.join(
-        ","
+        ",",
       )} ${whereStr} ${returning ? `returning *` : ""}`;
       qArgs.push(...whereArgs);
       if (DB.enableLog) {
@@ -1307,7 +1328,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.UPDATE,
           result,
-          this
+          this,
         );
       }
       if (
@@ -1318,7 +1339,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.UPDATE,
           result,
-          this
+          this,
         );
       }
       if (DB.asyncActionExists(DB.EventNameSpaces.UPDATE)) {
@@ -1332,7 +1353,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
-          this
+          this,
         );
       }
       if (
@@ -1343,7 +1364,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
-          this
+          this,
         );
       }
       if (DB.asyncActionExists(DB.EventNameSpaces.ERROR)) {
@@ -1360,7 +1381,7 @@ class DB {
         1,
         this.table,
         true,
-        true
+        true,
       );
       const sql = `delete from "${this.schema}"."${this.table}" ${whereStr} ${
         returning ? `returning *` : ""
@@ -1375,7 +1396,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.DELETE,
           result,
-          this
+          this,
         );
       }
       if (
@@ -1386,7 +1407,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.DELETE,
           result,
-          this
+          this,
         );
       }
       if (DB.asyncActionExists(DB.EventNameSpaces.DELETE)) {
@@ -1400,7 +1421,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
-          this
+          this,
         );
       }
       if (
@@ -1411,7 +1432,7 @@ class DB {
           this.table,
           DB.EventNameSpaces.ERROR,
           error,
-          this
+          this,
         );
       }
       if (DB.asyncActionExists(DB.EventNameSpaces.ERROR)) {
@@ -1463,7 +1484,7 @@ class DB {
         1,
         this.table,
         true,
-        true
+        true,
       );
       const groupByStr = this.makeGroupBy(groupBy, this.table);
       // const distinctStr = this.makeDistinctOn(distinct, this.table);
@@ -1496,7 +1517,7 @@ class DB {
       const countAgg = this.buildCountAgg(
         _count,
         distinct,
-        alias || this.table
+        alias || this.table,
       );
       const aggregations = [
         {
@@ -1530,7 +1551,7 @@ class DB {
           index,
           alias,
           true,
-          true
+          true,
         );
         const groupByStr = this.makeGroupBy(groupBy, this.table);
         // const distinctStr = this.makeDistinctOn(distinct, this.table);
@@ -1622,8 +1643,11 @@ class DB {
       (acc, [key, value]) => {
         acc[0].push(`"${key}"`);
         if (this.isGeospatialColumn(key)) {
-          const [str, args, currentIndex] =
-            this.getGeospatialColumnValueForStatement(key, value, index);
+          const [
+            str,
+            args,
+            currentIndex,
+          ] = this.getGeospatialColumnValueForStatement(key, value, index);
           index = currentIndex + 1;
           acc[1].push(str);
           acc[2].push(...args);
@@ -1635,7 +1659,7 @@ class DB {
 
         return acc;
       },
-      [[], [], []]
+      [[], [], []],
     );
 
     const { update, ignore, constraint, where } = onConflict || {};
@@ -1663,7 +1687,7 @@ class DB {
           qArgs.length + 1,
           this.table,
           true,
-          true
+          true,
         );
 
         conflictSql += ` do update set ${columns} ${whereStr}`;
@@ -1673,7 +1697,7 @@ class DB {
     // const conflictingSql = !!ignore ? ' ON CONFLICT DO NOTHING ' : !!update && Array.isArray(update) && update.length > 0 ?   : ''
     return [
       `insert into "${this.schema}"."${this.table}" (${columns.join(
-        ","
+        ",",
       )}) values(${placeholders.join(",")}) ${conflictSql} ${
         returning ? `returning *` : ""
       }`,
@@ -1701,7 +1725,7 @@ class DB {
     isFirstEntry = true,
     startWithWhere = true,
     binder = "and",
-    depth = 0
+    depth = 0,
   ) {
     if (!model || !where || !DB.isObject(where)) {
       return ["", [], index];
@@ -1727,7 +1751,7 @@ class DB {
       if (QUERY_BINDER_KEYS[key]) {
         if (!Array.isArray(config)) {
           throw new Error(
-            "No Array provided for query logical binder operation"
+            "No Array provided for query logical binder operation",
           );
         }
         if (!config.length) {
@@ -1744,7 +1768,7 @@ class DB {
             alias,
             i === 0,
             false,
-            WHERE_CLAUSE_OPERATORS[key]
+            WHERE_CLAUSE_OPERATORS[key],
           );
           sql += `${str}`;
           args.push(...qArgs);
@@ -1798,12 +1822,22 @@ class DB {
           }
         }
       } else if (model.columns[key]) {
-        const [isArrayComparison, sqlSTR, arrayKey] =
-          model.isArrayComparison(config);
+        if (this.isInstantEqualityInWhereClause(key, config)) {
+          sql += ` ${getFirstEntry(isFirstEntry, binder)} "${alias}"."${
+            model.columns[key].column
+          }" = $${index}`;
+          index++;
+          args.push(config);
+          isFirstEntry = false;
+          continue;
+        }
+        const [isArrayComparison, sqlSTR, arrayKey] = model.isArrayComparison(
+          config,
+        );
         if (isArrayComparison) {
           sql += ` ${getFirstEntry(
             isFirstEntry,
-            binder
+            binder,
           )} $${index} ${sqlSTR}("${alias}"."${model.columns[key].column}") `;
           index++;
           args.push(config[arrayKey]);
@@ -1818,7 +1852,7 @@ class DB {
             model.columns[key],
             config[configKey],
             index,
-            alias
+            alias,
           );
 
           sql += ` ${getFirstEntry(isFirstEntry, binder)} ${gisSQL} `;
@@ -1857,7 +1891,7 @@ class DB {
           alias,
           isFirstEntry,
           false,
-          binder
+          binder,
         );
 
         sql += qStr;
@@ -1870,7 +1904,7 @@ class DB {
         const newAlias = this.makeDepthAlias(relation.alias, depth);
         sql += ` ${getFirstEntry(
           isFirstEntry,
-          binder
+          binder,
         )} not exists (select 1 from "${
           currentModel?.schema || DB.database
         }"."${
@@ -1878,20 +1912,20 @@ class DB {
         }" ${newAlias} where ${currentModel.makeRelationalWhereAliases(
           alias,
           newAlias,
-          relation
+          relation,
         )} `;
         const [qString, qArgs, idx] = currentModel.makeWhereClause(
           currentModel,
           currentModel._mergeRelationalWhere(
             where[key][relationKey] || {},
-            relation.where || {}
+            relation.where || {},
           ),
           index,
           newAlias,
           false,
           false,
           "and", // change over here due to relational or chaining
-          depth + 1
+          depth + 1,
         );
         sql += ` ${qString} )`;
         args.push(...qArgs);
@@ -1903,26 +1937,26 @@ class DB {
 
         sql += ` ${getFirstEntry(
           isFirstEntry,
-          binder
+          binder,
         )} exists (select 1 from "${currentModel.schema || DB.database}"."${
           currentModel.table
         }" ${newAlias} where ${currentModel.makeRelationalWhereAliases(
           alias,
           newAlias,
-          relation
+          relation,
         )} `;
         const [qString, qArgs, idx] = currentModel.makeWhereClause(
           currentModel,
           currentModel._mergeRelationalWhere(
             where[key] || {},
-            relation.where || {}
+            relation.where || {},
           ),
           index,
           newAlias,
           false,
           false,
           "and", // change over here due to relational or chaining
-          depth + 1
+          depth + 1,
         );
         sql += ` ${qString} )`;
         args.push(...qArgs);
@@ -1933,7 +1967,7 @@ class DB {
         const currentModel = DB.getRelatedModel(relation);
         const newAlias = this.makeDepthAlias(relation.alias, depth);
         const operator = Object.keys(config).find(
-          (k) => WHERE_CLAUSE_OPERATORS[k]
+          (k) => WHERE_CLAUSE_OPERATORS[k],
         );
         if (!WHERE_CLAUSE_OPERATORS[operator]) {
           throw new Error("invalid comparison operator");
@@ -1952,7 +1986,7 @@ class DB {
 
         sql += ` ${getFirstEntry(
           isFirstEntry,
-          binder
+          binder,
         )} (select ${aggregationSQLOperation}(${aggregationColumn}) from "${
           currentModel.schema || DB.database
         }"."${
@@ -1960,20 +1994,20 @@ class DB {
         }" ${newAlias} where  ${currentModel.makeRelationalWhereAliases(
           alias,
           newAlias,
-          relation
+          relation,
         )} `;
         const [qString, qArgs, idx] = currentModel.makeWhereClause(
           currentModel,
           currentModel._mergeRelationalWhere(
             config?.where || {},
-            relation.where || {}
+            relation.where || {},
           ),
           index,
           newAlias,
           false,
           false,
           "and", // change over here due to relational or chaining
-          depth + 1
+          depth + 1,
         );
         sql += ` ${qString} )  ${WHERE_CLAUSE_OPERATORS[operator]} $${idx}`;
         args.push(...qArgs, value);
@@ -2017,18 +2051,18 @@ class DB {
       case "_st_3d_distance":
       case "_st_distance": {
         const [[distanceOperatorKey, distanceValue]] = Object.entries(
-          distance || {}
+          distance || {},
         );
         if (!POSTGIS_DISTANCE_COMPARISON_OPERATORS[distanceOperatorKey]) {
           throw new Error(
-            `Unsupported operator ${distanceOperatorKey} for gis comparison`
+            `Unsupported operator ${distanceOperatorKey} for gis comparison`,
           );
         }
         const [str, args, idx] = this.withSRIDFilter(
           column,
           rest,
           index,
-          alias
+          alias,
         );
         const operator = WHERE_CLAUSE_OPERATORS[distanceOperatorKey];
         const sql = ` ${IS_POSTGIS_OPERATOR[key]}(${str}) ${operator} $${
@@ -2042,7 +2076,7 @@ class DB {
           column,
           rest,
           index,
-          alias
+          alias,
         );
         const sql = ` ${IS_POSTGIS_OPERATOR[key]}(${str},$${idx + 1})`;
         return [sql, args.concat(distance), idx + 1];
@@ -2075,7 +2109,7 @@ class DB {
           column,
           config,
           index,
-          alias
+          alias,
         );
         const sql = ` ${IS_POSTGIS_OPERATOR[key]}(${str})`;
         return [sql, args, idx];
@@ -2087,7 +2121,7 @@ class DB {
         return this.mapGISDistanceOperation(key, column, config, index, alias);
       default:
         throw new Error(
-          `operator ${key} is not implemented for postgis operations`
+          `operator ${key} is not implemented for postgis operations`,
         );
     }
   }
@@ -2141,7 +2175,7 @@ class DB {
           acc.push(
             ` ${alias ? `"${alias}".` : ""}"${key}"  ${
               DB.allowedOrderDirectionsKeys[value] || "asc"
-            }`
+            }`,
           );
         } else if (value instanceof SQL) {
           const [sql, args, idx] = value.__getSQL({
@@ -2199,8 +2233,8 @@ class DB {
         currModel.produceOrderByForAggregations(
           orderBy[key],
           currentAlias,
-          relation
-        )
+          relation,
+        ),
       );
       return acc;
     }, []);
@@ -2223,13 +2257,13 @@ class DB {
     const whereClause = `${this.makeRelationalWhereAliases(
       prevAlias,
       this.table,
-      relation
+      relation,
     )} `;
     if (_count) {
       queries.push(
         ` (SELECT  COUNT(*) FROM ${table} WHERE ${whereClause} ) ${
           DB.allowedOrderDirectionsKeys[_count] || "asc"
-        }`
+        }`,
       );
     }
     Object.entries(rest).forEach(([key, value]) => {
@@ -2247,7 +2281,7 @@ class DB {
           schema: this.schema,
           whereClause,
           aggrKeyConfig: value,
-        })
+        }),
       );
     });
     return queries;
@@ -2310,7 +2344,7 @@ class DB {
         }
         return acc;
       },
-      [{}, {}, false]
+      [{}, {}, false],
     );
   }
   getModelColumnsCommaSeperatedString(alias, select, extras) {
@@ -2322,7 +2356,7 @@ class DB {
         columns = columns.concat(
           Object.values(extras)
             .filter((x) => typeof x === "function")
-            .map((x) => x(alias || this.table))
+            .map((x) => x(alias || this.table)),
         );
       }
       if (columns.length > 0) {
@@ -2336,7 +2370,7 @@ class DB {
         .concat(
           Object.values(extras)
             .filter((x) => typeof x === "function")
-            .map((x) => x(alias || this.table))
+            .map((x) => x(alias || this.table)),
         )
         .join(",");
     }
@@ -2352,7 +2386,7 @@ class DB {
       return relation.from_column
         .map(
           (x, idx) =>
-            `"${alias}"."${x}" = "${referencedAlias}"."${relation.to_column[idx]}"`
+            `"${alias}"."${x}" = "${referencedAlias}"."${relation.to_column[idx]}"`,
         )
         .join(" and ");
     }
@@ -2420,6 +2454,19 @@ class DB {
       return "";
     }
     return alias.split("_aggregate")[0];
+  }
+  isInstantEqualityInWhereClause(key, config) {
+    if (!this.columns[key]) {
+      return false;
+    }
+    if (this.columns[key].type?.includes?.("json")) {
+      return false;
+    }
+    return (
+      !DB.isObject(config) &&
+      !config?.type?.includes?.("json") &&
+      !(config instanceof SQL)
+    );
   }
   static isObject(value) {
     return (
