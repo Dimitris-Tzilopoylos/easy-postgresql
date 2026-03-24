@@ -6,6 +6,7 @@
 //   JsonUpdateOperators,
 //   JsonWhereClauseOperators,
 //   sqlRaw,
+//   DBManager,
 // } = require("./dist");
 
 // DB.registerConnectionConfig({
@@ -123,6 +124,13 @@
 //       name: "building_id",
 //       type: "text",
 //       nullable: false,
+//       references: {
+//         table: "buildings",
+//         schema: "public",
+//         referencedColumn: "id",
+//         on_delete: "cascade",
+//         on_update: "cascade",
+//       },
 //     }),
 //   };
 
@@ -152,12 +160,7 @@
 
 // const b = new Building();
 
-// const data = b
-//   .find({
-//     where: {
-//       name: "test",
-//     },
-//   })
+// DBManager.createTable(new Space())
 //   .then((res) => {
 //     console.log(res);
 //   })

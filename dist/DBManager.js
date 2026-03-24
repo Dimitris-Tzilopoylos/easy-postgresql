@@ -42,13 +42,13 @@ class DBManager {
   }
   static async alterTableOwner(model, owner, connection) {
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} owner to ${owner};`;
     await (connection || DB.pool).query(up);
     return {
       up,
       down: `-- No down migration for alterTableOwner(${DBManager.toModelSchemaTableAlias(
-        model
+        model,
       )},${owner})`,
     };
   }
@@ -88,9 +88,23 @@ class DBManager {
       .join(",\n");
   }
   static modelColumnToSQL(column) {
-    return `"${column.column}" ${column.type} ${
+    let sql = `"${column.column}" ${column.type} ${
       column.columnConfig?.length ? `(${column.columnConfig?.length})` : ""
     } ${DBManager.modelColumnConstraints(column)}`;
+    if (column.columnConfig.references) {
+      sql += ` references ${
+        column.columnConfig.references.schema
+          ? `"${column.columnConfig.references.schema}"."${column.columnConfig.references.table}"`
+          : `"${column.columnConfig.references.table}"`
+      } ("${column.columnConfig.references.referencedColumn}")`;
+      if (column.columnConfig.references.on_delete) {
+        sql += ` on delete ${column.columnConfig.references.on_delete} `;
+      }
+      if (column.columnConfig.references.on_update) {
+        sql += ` on update ${column.columnConfig.references.on_update} `;
+      }
+    }
+    return sql;
   }
   static modelColumnConstraints(column) {
     const { columnConfig } = column;
@@ -161,10 +175,10 @@ class DBManager {
   static async createPrimaryKey(model, name, columns, connection) {
     const fColumns = DBManager.formatConstraintOrIndexColumns(columns);
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} add constraint ${name} primary key (${fColumns.join(",")});`;
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} drop constraint ${name};`;
     await (connection || DB.pool).query(up);
     return {
@@ -175,10 +189,10 @@ class DBManager {
   static async dropPrimaryKey(model, name, columns, connection) {
     const fColumns = DBManager.formatConstraintOrIndexColumns(columns);
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} add constraint ${name} primary key (${fColumns.join(",")});`;
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} drop constraint ${name};`;
     await (connection || DB.pool).query(up);
     return {
@@ -194,23 +208,23 @@ class DBManager {
     toColumns,
     onUpdate,
     onDelete,
-    connection
+    connection,
   ) {
     const fColumns = DBManager.formatConstraintOrIndexColumns(fromColumns);
     const tColumns = DBManager.formatConstraintOrIndexColumns(toColumns);
 
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
-      fromModel
+      fromModel,
     )} add constraint ${name} foreign key (${fColumns.join(
-      ","
+      ",",
     )}) references ${DBManager.toModelSchemaTableAlias(
-      toModel
+      toModel,
     )} (${tColumns.join(",")}) ${DBManager.toForeignKeyAction(
       "update",
-      onUpdate
+      onUpdate,
     )} ${DBManager.toForeignKeyAction("delete", onDelete)};`;
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
-      fromModel
+      fromModel,
     )} drop constraint ${name};`;
     await (connection || DB.pool).query(up);
     return {
@@ -226,23 +240,23 @@ class DBManager {
     toColumns,
     onUpdate,
     onDelete,
-    connection
+    connection,
   ) {
     const fColumns = DBManager.formatConstraintOrIndexColumns(fromColumns);
     const tColumns = DBManager.formatConstraintOrIndexColumns(toColumns);
 
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
-      fromModel
+      fromModel,
     )} add constraint ${name} foreign key (${fColumns.join(
-      ","
+      ",",
     )}) references ${DBManager.toModelSchemaTableAlias(
-      toModel
+      toModel,
     )} (${tColumns.join(",")}) ${DBManager.toForeignKeyAction(
       "update",
-      onUpdate
+      onUpdate,
     )} ${DBManager.toForeignKeyAction("delete", onDelete)};`;
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
-      fromModel
+      fromModel,
     )} drop constraint ${name};`;
     await (connection || DB.pool).query(up);
     return {
@@ -253,10 +267,10 @@ class DBManager {
   static async createUniqueConstraint(model, name, columns, connection) {
     const fColumns = DBManager.formatConstraintOrIndexColumns(columns);
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} add constraint ${name} unique (${fColumns.join(",")});`;
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} drop constraint ${name};`;
     await (connection || DB.pool).query(up);
     return {
@@ -267,10 +281,10 @@ class DBManager {
   static async dropUniqueConstraint(model, name, columns, connection) {
     const fColumns = DBManager.formatConstraintOrIndexColumns(columns);
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} add constraint ${name} unique (${fColumns.join(",")});`;
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} drop constraint ${name};`;
     await (connection || DB.pool).query(up);
     return {
@@ -281,7 +295,7 @@ class DBManager {
   static async createUniqueIndex(model, name, columns, connection) {
     const fColumns = DBManager.formatConstraintOrIndexColumns(columns);
     const up = `create unique index ${name} on ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} (${fColumns.join(",")});`;
     const down = `drop index ${
       model?.schema ? `"${model.schema}".` : ""
@@ -295,7 +309,7 @@ class DBManager {
   static async dropUniqueIndex(model, name, columns, connection) {
     const fColumns = DBManager.formatConstraintOrIndexColumns(columns);
     const down = `create unique index ${name} on ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} (${fColumns.join(",")});`;
     const up = `drop index ${
       model?.schema ? `"${model.schema}".` : ""
@@ -309,7 +323,7 @@ class DBManager {
   static async createIndex(model, name, columns, type, connection) {
     const fColumns = DBManager.formatConstraintOrIndexColumns(columns);
     const up = `create index ${name} on ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )}   ${type ? `using ${type}` : ""} (${fColumns.join(",")});`;
     const down = `drop index ${
       model?.schema ? `"${model.schema}".` : ""
@@ -323,7 +337,7 @@ class DBManager {
   static async dropIndex(model, name, columns, type, connection) {
     const fColumns = DBManager.formatConstraintOrIndexColumns(columns);
     const down = `create index ${name} on ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )}   ${type ? `using ${type}` : ""} (${fColumns.join(",")});`;
     const up = `drop index ${
       model?.schema ? `"${model.schema}".` : ""
@@ -336,10 +350,10 @@ class DBManager {
   }
   static async addCheckConstraint(model, name, sql, connection) {
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} add constraint ${name} check (${sql});`;
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} drop constraint ${name};`;
     await (connection || DB.pool).query(up);
     return {
@@ -349,10 +363,10 @@ class DBManager {
   }
   static async dropCheckConstraint(model, name, sql, connection) {
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} add constraint ${name} check (${sql});`;
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} drop constraint ${name};`;
     await (connection || DB.pool).query(up);
     return {
@@ -362,10 +376,10 @@ class DBManager {
   }
   static async addColumn(model, column, connection) {
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} add column ${DBManager.modelColumnToSQL(column)};`;
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} drop column "${column.column}";`;
     await (connection || DB.pool).query(up);
     return {
@@ -375,10 +389,10 @@ class DBManager {
   }
   static async dropColumn(model, column, connection) {
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} add column ${DBManager.modelColumnToSQL(column)};`;
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} drop column "${column.column}";`;
     await (connection || DB.pool).query(up);
     return {
@@ -388,10 +402,10 @@ class DBManager {
   }
   static async renameColumn(model, column, newName, connection) {
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} rename column "${column.column}" to "${newName}";`;
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} rename column "${newName}" to "${column.column}";`;
     await (connection || DB.pool).query(up);
     return {
@@ -401,15 +415,15 @@ class DBManager {
   }
   static async setColumnDefaultValue(model, column, defaultValue, connection) {
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} alter column "${column.column}" set default ${defaultValue};`;
 
     let down = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} alter column "${column.column}" drop default;`;
     if (typeof column.columnConfig.defaultValue !== "undefined") {
       down = `alter table ${DBManager.toModelSchemaTableAlias(
-        model
+        model,
       )} alter column "${column.column}" set default ${
         column.columnConfig.defaultValue
       };`;
@@ -422,14 +436,14 @@ class DBManager {
   }
   static async dropColumnDefaultValue(model, column, connection) {
     let down = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} alter column "${column.column}" set default ${defaultValue};`;
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} alter column "${column.column}" drop default;`;
     if (typeof column.columnConfig.defaultValue !== "undefined") {
       down = `alter table ${DBManager.toModelSchemaTableAlias(
-        model
+        model,
       )} alter column "${column.column}" set default ${
         column.columnConfig.defaultValue
       };`;
@@ -442,11 +456,11 @@ class DBManager {
   }
   static async setColumnNotNullable(model, column, connection) {
     let down = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} alter column "${column.column}" drop not null;`;
 
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} alter column "${column.column}" set not null;`;
     if (
       typeof column.columnConfig.nullable !== "undefined" &&
@@ -462,11 +476,11 @@ class DBManager {
   }
   static async setColumnNullable(model, column, connection) {
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} alter column "${column.column}" drop not null;`;
 
     let down = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} alter column "${column.column}" set not null;`;
     if (
       typeof column.columnConfig.nullable !== "undefined" &&
@@ -482,11 +496,11 @@ class DBManager {
   }
   static async enableRLS(model, connection) {
     const up = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} enable row level security;`;
 
     let down = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} disable row level security;`;
 
     await (connection || DB.pool).query(up);
@@ -497,11 +511,11 @@ class DBManager {
   }
   static async disableRLS(model, connection) {
     const down = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} enable row level security;`;
 
     let up = `alter table ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} disable row level security;`;
 
     await (connection || DB.pool).query(up);
@@ -568,10 +582,10 @@ class DBManager {
           : `(${options.using})`
         : "(true)";
     let up = `create policy ${name} on ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )} for select ${roles} using ${using};`;
     let down = `drop policy ${name} on ${DBManager.toModelSchemaTableAlias(
-      model
+      model,
     )};`;
     return {
       create: async () => {
@@ -773,7 +787,7 @@ class DBManager {
 
     const formattedColumns = columns
       .filter(
-        (col) => !!col && (col instanceof Column || typeof col === "string")
+        (col) => !!col && (col instanceof Column || typeof col === "string"),
       )
       .map((col) => (col instanceof Column ? col.column : col));
     return formattedColumns;
@@ -782,7 +796,7 @@ class DBManager {
     const isValidAction =
       value &&
       ["cascade", "no action", "restrict", "set default", "set null"].indexOf(
-        value?.toLowerCase?.()
+        value?.toLowerCase?.(),
       ) !== -1;
     if (!isValidAction) {
       return "";
@@ -856,20 +870,20 @@ class DBManager {
   }
   static async grantPrivileges(role, privileges, model, connection) {
     const up = `GRANT ${privileges.join(
-      ", "
+      ", ",
     )} ON ${DBManager.toModelSchemaTableAlias(model)} TO ${role};`;
     const down = `REVOKE ${privileges.join(
-      ", "
+      ", ",
     )} ON ${DBManager.toModelSchemaTableAlias(model)} FROM ${role};`;
     await (connection || DB.pool).query(up);
     return { up, down };
   }
   static async revokePrivileges(role, privileges, model, connection) {
     const down = `GRANT ${privileges.join(
-      ", "
+      ", ",
     )} ON ${DBManager.toModelSchemaTableAlias(model)} TO ${role};`;
     const up = `REVOKE ${privileges.join(
-      ", "
+      ", ",
     )} ON ${DBManager.toModelSchemaTableAlias(model)} FROM ${role};`;
     await (connection || DB.pool).query(up);
     return { up, down };
@@ -924,13 +938,13 @@ class DBManager {
       clauses.push(
         options.minValue === null
           ? "NO MINVALUE"
-          : `MINVALUE ${options.minValue}`
+          : `MINVALUE ${options.minValue}`,
       );
     if (options?.maxValue !== undefined)
       clauses.push(
         options.maxValue === null
           ? "NO MAXVALUE"
-          : `MAXVALUE ${options.maxValue}`
+          : `MAXVALUE ${options.maxValue}`,
       );
     if (options?.start !== undefined)
       clauses.push(`START WITH ${options.start}`);

@@ -16,9 +16,10 @@ class Column {
       foreign,
       auto_increment,
       constraints = [],
+      references,
     } = {
       defaultValue,
-    }
+    },
   ) {
     this.columnConfig = {
       name,
@@ -34,6 +35,7 @@ class Column {
       foreign,
       auto_increment,
       constraints,
+      references,
     };
   }
   get column() {

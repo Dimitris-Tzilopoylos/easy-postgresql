@@ -15,6 +15,9 @@ declare class Column {
     foreign,
     auto_increment,
     constraints,
+    references,
+    on_delete,
+    on_update,
   }?: {
     defaultValue?: any;
     name: any;
@@ -29,6 +32,23 @@ declare class Column {
     foreign?: any;
     auto_increment?: any;
     constraints?: any[];
+    references?: {
+      table: string;
+      schema: string;
+      referencedColumn: string;
+      on_delete?:
+        | "cascade"
+        | "no action"
+        | "restrict"
+        | "set default"
+        | "set null";
+      on_update?:
+        | "cascade"
+        | "no action"
+        | "restrict"
+        | "set default"
+        | "set null";
+    };
   });
   columnConfig: {
     name: any;
@@ -44,6 +64,23 @@ declare class Column {
     foreign?: any;
     auto_increment?: any;
     constraints?: any[];
+    references?: {
+      table: string;
+      schema: string;
+      referencedColumn: string;
+      on_delete?:
+        | "cascade"
+        | "no action"
+        | "restrict"
+        | "set default"
+        | "set null";
+      on_update?:
+        | "cascade"
+        | "no action"
+        | "restrict"
+        | "set default"
+        | "set null";
+    };
   };
   get column(): any;
   get type(): any;
