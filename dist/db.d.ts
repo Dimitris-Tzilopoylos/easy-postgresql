@@ -90,52 +90,52 @@ declare class DB {
   static onSelect(
     schema: any,
     table: any,
-    cb: (data: any, model: DB) => Promise<void> | void
+    cb: (data: any, model: DB) => Promise<void> | void,
   ): void;
   static onInsert(
     schema: any,
     table: any,
-    cb: (data: any, model: DB) => Promise<void> | void
+    cb: (data: any, model: DB) => Promise<void> | void,
   ): void;
   static onUpdate(
     schema: any,
     table: any,
-    cb: (data: any, model: DB) => Promise<void> | void
+    cb: (data: any, model: DB) => Promise<void> | void,
   ): void;
   static onDelete(
     schema: any,
     table: any,
-    cb: (data: any, model: DB) => Promise<void> | void
+    cb: (data: any, model: DB) => Promise<void> | void,
   ): void;
   static onError(
     schema: any,
     table: any,
-    cb: (error: any, model: DB) => Promise<void> | void
+    cb: (error: any, model: DB) => Promise<void> | void,
   ): void;
   static onSelectAsync(
     schema: any,
     table: any,
-    cb: (data: any, model: DB) => Promise<void>
+    cb: (data: any, model: DB) => Promise<void>,
   ): void;
   static onInsertAsync(
     schema: any,
     table: any,
-    cb: (data: any, model: DB) => Promise<void>
+    cb: (data: any, model: DB) => Promise<void>,
   ): void;
   static onUpdateAsync(
     schema: any,
     table: any,
-    cb: (data: any, model: DB) => Promise<void>
+    cb: (data: any, model: DB) => Promise<void>,
   ): void;
   static onDeleteAsync(
     schema: any,
     table: any,
-    cb: (data: any, model: DB) => Promise<void>
+    cb: (data: any, model: DB) => Promise<void>,
   ): void;
   static onErrorAsync(
     schema: any,
     table: any,
-    cb: (error: any, model: DB) => Promise<void>
+    cb: (error: any, model: DB) => Promise<void>,
   ): void;
   static onSelectActionAsync(cb: (data: any, model: DB) => Promise<void>): void;
   static onInsertActionAsync(cb: (data: any, model: DB) => Promise<void>): void;
@@ -144,7 +144,7 @@ declare class DB {
   static onErrorActionAsync(cb: (error: any, model: DB) => Promise<void>): void;
   static subscriber(
     event: any,
-    cb: any
+    cb: any,
   ):
     | Promise<(() => Promise<any>) | (() => Promise<any>)>
     | (() => Promise<any>);
@@ -156,19 +156,19 @@ declare class DB {
     table: any,
     namespace: any,
     data: any,
-    instance: any
+    instance: any,
   ): any;
   static executeAsyncEvent(
     schema: any,
     table: any,
     namespace: any,
     data: any,
-    instance: any
+    instance: any,
   ): Promise<any>;
   static executeAsynAction(
     namespace: any,
     data: any,
-    instance: any
+    instance: any,
   ): Promise<any>;
   static eventExists(schema: any, table: any, namespace: any): boolean;
   static asyncEventExists(schema: any, table: any, namespace: any): boolean;
@@ -176,7 +176,7 @@ declare class DB {
   static paginator(
     page: any,
     view: any,
-    total: any
+    total: any,
   ): {
     total: any;
     view: any;
@@ -471,12 +471,12 @@ declare class DB {
   getGeospatialColumnValueForStatement(
     columnName?: any,
     data?: any,
-    currentIndex?: any
+    currentIndex?: any,
   ): any;
   buildInsertQuery(
     args: any,
     onConflict: any,
-    returning?: boolean
+    returning?: boolean,
   ): (string | any[])[];
   makeDistinctOn(distinct: any, alias: any): string;
   makeWhereClause(
@@ -487,7 +487,7 @@ declare class DB {
     isFirstEntry?: boolean,
     startWithWhere?: boolean,
     binder?: string,
-    depth?: number
+    depth?: number,
   ): any;
   withSRIDFilter(column: any, value: any, index: any, alias: any): any;
   mapGISDistanceOperation(
@@ -495,14 +495,14 @@ declare class DB {
     column: any,
     config: any,
     index: any,
-    alias: any
+    alias: any,
   ): any;
   mapGISOperation(
     key: any,
     column: any,
     config: any,
     index: any,
-    alias: any
+    alias: any,
   ): any;
   isGISComparison(config: any): any;
   isArrayComparison(config: any): boolean[] | (string | true)[];
@@ -513,12 +513,12 @@ declare class DB {
   getAggregationForSorting(orderBy: any, currentAlias: any): string;
   combineOrderBy(
     orderByColumnsString: any,
-    orderByAggregationsString: any
+    orderByAggregationsString: any,
   ): string;
   produceOrderByForAggregations(
     aggrConfig: any,
     prevAlias: any,
-    relation: any
+    relation: any,
   ): string[];
   toOrderByByAggregationConfig({
     columnsMap,
@@ -545,18 +545,18 @@ declare class DB {
       | "for_share"
       | "for_key_share"
       | "nowait"
-      | "skip_locked"
+      | "skip_locked",
   ): string;
   splitRelationalAndModelColumnsInput(args: any, allowedEntries?: any[]): any;
   getModelColumnsCommaSeperatedString(
     alias: any,
     select?: any,
-    extras?: { [key: string]: (x: string) => string }
+    extras?: { [key: string]: (x: string) => string },
   ): string;
   makeRelationalWhereAliases(
     alias: string,
     referencedAlias: string,
-    relation: any
+    relation: any,
   ): string;
   get columnsStrNoAlias(): string;
   get dbPool(): Pool;
@@ -565,6 +565,7 @@ declare class DB {
   setCurrentSettingParametrized(
     name: string,
     value: any,
-    isLocal?: boolean
+    isLocal?: boolean,
   ): Promise<any>;
+  isInstantEqualityInWhereClause(key: any, config: any): boolean;
 }
