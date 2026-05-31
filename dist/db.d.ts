@@ -201,7 +201,7 @@ declare class DB {
   savepointCounter: number;
   savepointStack: string[];
   connect(primary?: boolean): Promise<void>;
-  disconnect(): void;
+  disconnect(): Promise<void>;
   startTransaction(): Promise<void>;
   commit(): Promise<void>;
   rollback(): Promise<void>;

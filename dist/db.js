@@ -95,7 +95,7 @@ class DB {
     this.columns = {};
     this.isAggregate = false;
     this.connection = connection;
-    this.connected = !!connection && connection?._connected;
+    this.connected = !!connection;
     this.database = DB.database;
     this.driver = null;
     this.schema = schema;
@@ -146,24 +146,20 @@ class DB {
       this.connected = true;
     }
   }
-  disconnect() {
+  async disconnect() {
     if (!this.connected) {
       return;
     }
     if (this.transaction) {
-      this.rollback()
-        .then((x) => {
-          this.connection.release();
-          this.connected = false;
-        })
-        .catch((err) => {
-          this.connection.release();
-          this.connected = false;
-        });
-    } else {
-      this.connection.release();
-      this.connected = false;
+      try {
+        await this.rollback();
+      } catch (_) {
+        // ignore rollback error — still need to release
+      }
     }
+    this.connection.release();
+    this.connected = false;
+    this.connection = null;
   }
   async startTransaction() {
     if (this.transaction) {
@@ -219,11 +215,11 @@ class DB {
       await this.startTransaction();
       const result = await cb(this.connection);
       await this.commit();
-      this.disconnect();
+      await this.disconnect();
       return result;
     } catch (error) {
       await this.rollback();
-      this.disconnect();
+      await this.disconnect();
       return error;
     }
   }
@@ -231,10 +227,10 @@ class DB {
     try {
       await this.connect();
       const result = await cb(this.connection);
-      this.disconnect();
+      await this.disconnect();
       return result;
     } catch (error) {
-      this.disconnect();
+      await this.disconnect();
       throw error;
     }
   }
@@ -983,7 +979,7 @@ class DB {
       const result = await this.withTransaction(async (tx) => {
         return await this.insert(args);
       });
-      this.disconnect();
+      await this.disconnect();
       if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.INSERT)) {
         DB.executeEvent(
           this.schema,
@@ -1009,7 +1005,7 @@ class DB {
       }
       return result;
     } catch (error) {
-      this.disconnect();
+      await this.disconnect();
       if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)) {
         DB.executeEvent(
           this.schema,
@@ -1053,7 +1049,7 @@ class DB {
         }
         return results;
       });
-      this.disconnect();
+      await this.disconnect();
       if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.INSERT)) {
         DB.executeEvent(
           this.schema,
@@ -1079,7 +1075,7 @@ class DB {
       }
       return result;
     } catch (error) {
-      this.disconnect();
+      await this.disconnect();
       if (DB.eventExists(this.schema, this.table, DB.EventNameSpaces.ERROR)) {
         DB.executeEvent(
           this.schema,
