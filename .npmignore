@@ -21,3 +21,4 @@ scheduler.js
 sql.js
 test.js
 validation.js
+tests/*
