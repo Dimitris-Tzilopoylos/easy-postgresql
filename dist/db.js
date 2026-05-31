@@ -95,8 +95,7 @@ class DB {
     this.columns = {};
     this.isAggregate = false;
     this.connection = connection;
-    this.connected = !!connection;
-    this.transaction = false;
+    this.connected = !!connection && connection?._connected;
     this.database = DB.database;
     this.driver = null;
     this.schema = schema;
@@ -156,36 +155,33 @@ class DB {
         .then((x) => {
           this.connection.release();
           this.connected = false;
-          this.transaction = false;
         })
         .catch((err) => {
           this.connection.release();
           this.connected = false;
-          this.transaction = false;
         });
     } else {
       this.connection.release();
       this.connected = false;
-      this.transaction = false;
     }
   }
   async startTransaction() {
+    if (this.transaction) {
+      return;
+    }
     await this.connection.query(START_TRANSACTION);
-    this.transaction = true;
   }
   async commit() {
     if (!this.transaction) {
       return;
     }
     await this.connection.query(COMMIT);
-    this.transaction = false;
   }
   async rollback() {
     if (!this.transaction) {
       return;
     }
     await this.connection.query(ROLLBACK);
-    this.transaction = false;
   }
   async createSavepoint() {
     this.savepointCounter++;
@@ -335,8 +331,8 @@ class DB {
                 distinct,
                 alias,
               )} ${modelColumnsStr} from "${this.schema}"."${
-      this.table
-    }" ${alias}`;
+                this.table
+              }" ${alias}`;
     const self = this;
     function makeQuery(model, relations, depth, prevAlias) {
       if (!relations || typeof relations === "boolean") {
@@ -361,20 +357,14 @@ class DB {
           : self.makeDepthAlias(relation.alias, depth + i);
         const coalesceFallback = relation.type === "object" ? "null" : "[]";
         const coalesceAppendex = relation.type === "object" ? "->0" : "";
-        const modelColumnsStr = currentModel.getModelColumnsCommaSeperatedString(
-          depthAlias,
-          config?.select,
-          config?.extras,
-        );
-        const {
-          distinct,
-          groupBy,
-          orderBy,
-          where,
-          include,
-          limit,
-          offset,
-        } = DB.isObject(config) ? config : {};
+        const modelColumnsStr =
+          currentModel.getModelColumnsCommaSeperatedString(
+            depthAlias,
+            config?.select,
+            config?.extras,
+          );
+        const { distinct, groupBy, orderBy, where, include, limit, offset } =
+          DB.isObject(config) ? config : {};
         const selectColumnsStr = [modelColumnsStr]
           .concat(
             Object.keys(include || {}).map(
@@ -410,8 +400,8 @@ class DB {
                   distinct,
                   depthAlias,
                 )} ${modelColumnsStr} from "${currentModel?.schema}"."${
-            currentModel.table
-          }" ${depthAlias} `;
+                  currentModel.table
+                }" ${depthAlias} `;
         }
         const appendSql = makeQuery(
           currentModel,
@@ -703,20 +693,14 @@ class DB {
             : self.makeDepthAlias(relation.alias, depth + i);
           const coalesceFallback = relation.type === "object" ? "null" : "[]";
           const coalesceAppendex = relation.type === "object" ? "->0" : "";
-          const modelColumnsStr = currentModel.getModelColumnsCommaSeperatedString(
-            depthAlias,
-            config?.select,
-            config?.extras,
-          );
-          const {
-            distinct,
-            groupBy,
-            orderBy,
-            where,
-            include,
-            limit,
-            offset,
-          } = DB.isObject(config) ? config : {};
+          const modelColumnsStr =
+            currentModel.getModelColumnsCommaSeperatedString(
+              depthAlias,
+              config?.select,
+              config?.extras,
+            );
+          const { distinct, groupBy, orderBy, where, include, limit, offset } =
+            DB.isObject(config) ? config : {};
           let hasInclude = false;
           const selectColumnsStr = [modelColumnsStr]
             .concat(
@@ -759,11 +743,8 @@ class DB {
           args.push(...qArgs);
           index = idx;
           // const groupByStr = currentModel.makeGroupBy(groupBy, depthAlias);
-          const [
-            orderByStr,
-            orderByArgs,
-            orderByIndx,
-          ] = currentModel.makeOrderBy(orderBy, index, depthAlias);
+          const [orderByStr, orderByArgs, orderByIndx] =
+            currentModel.makeOrderBy(orderBy, index, depthAlias);
           args.push(...orderByArgs);
           index = orderByIndx;
           const [limitStr, limitArgs, idxLimit] = currentModel.makeLimit(
@@ -896,11 +877,8 @@ class DB {
     }
     try {
       let { onConflict, returning = true, ...rest } = args;
-      const [
-        modelPayload,
-        relationalPayload,
-        hasRelations,
-      ] = this.splitRelationalAndModelColumnsInput(rest);
+      const [modelPayload, relationalPayload, hasRelations] =
+        this.splitRelationalAndModelColumnsInput(rest);
 
       if (hasRelations) {
         returning = true;
@@ -957,10 +935,8 @@ class DB {
             }
 
             const { onConflict, ...rest } = value;
-            const [
-              modelPayload,
-              relationalPayload,
-            ] = insertionModel.splitRelationalAndModelColumnsInput(rest);
+            const [modelPayload, relationalPayload] =
+              insertionModel.splitRelationalAndModelColumnsInput(rest);
             const [query, args] = insertionModel.buildInsertQuery(
               modelPayload,
               onConflict,
@@ -1252,9 +1228,8 @@ class DB {
             );
           }
 
-          const [selfUpdateColumns] = this.splitRelationalAndModelColumnsInput(
-            value,
-          );
+          const [selfUpdateColumns] =
+            this.splitRelationalAndModelColumnsInput(value);
 
           acc[0].push(
             ...Object.entries(selfUpdateColumns).map(([c, val]) => {
@@ -1643,11 +1618,8 @@ class DB {
       (acc, [key, value]) => {
         acc[0].push(`"${key}"`);
         if (this.isGeospatialColumn(key)) {
-          const [
-            str,
-            args,
-            currentIndex,
-          ] = this.getGeospatialColumnValueForStatement(key, value, index);
+          const [str, args, currentIndex] =
+            this.getGeospatialColumnValueForStatement(key, value, index);
           index = currentIndex + 1;
           acc[1].push(str);
           acc[2].push(...args);
@@ -1831,9 +1803,8 @@ class DB {
           isFirstEntry = false;
           continue;
         }
-        const [isArrayComparison, sqlSTR, arrayKey] = model.isArrayComparison(
-          config,
-        );
+        const [isArrayComparison, sqlSTR, arrayKey] =
+          model.isArrayComparison(config);
         if (isArrayComparison) {
           sql += ` ${getFirstEntry(
             isFirstEntry,
@@ -2734,6 +2705,25 @@ class DB {
         DB.logger[DB.logLevel](...args);
       }
     }
+  }
+
+  get transaction() {
+    return this.isInTransaction();
+  }
+
+  isInTransaction() {
+    if (!this.connection) {
+      return false;
+    }
+
+    const status = this.connection?.getTransactionStatus();
+    return status === "T" || status === "E";
+  }
+
+  shouldRollback() {
+    return (
+      this.isInTransaction() && this.connection.getTransactionStatus() === "E"
+    );
   }
 }
 module.exports = DB;

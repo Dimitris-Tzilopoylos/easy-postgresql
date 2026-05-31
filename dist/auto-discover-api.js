@@ -83,7 +83,7 @@ class Postgres {
 
   __makeTableClasseName(table) {
     let newTable = table;
-    return newTable[0].toUpperCase() + newTable.slice(1).join("");
+    return newTable[0].toUpperCase() + newTable.slice(1);
   }
 
   __makeExportClass(model) {

@@ -196,7 +196,6 @@ declare class DB {
   isAggregate?: boolean;
   connection: any;
   connected: boolean;
-  transaction: boolean;
   database: any;
   driver: any;
   savepointCounter: number;
@@ -405,7 +404,7 @@ declare class DB {
       _min?: Record<string, any>;
       _sum?: Record<string, any>;
       _avg?: Record<string, any>;
-    }
+    },
   >({
     where,
     groupBy,
@@ -560,6 +559,18 @@ declare class DB {
   ): string;
   get columnsStrNoAlias(): string;
   get dbPool(): Pool;
+  get transaction(): boolean;
+  /**
+   * Returns true when the underlying pg connection is currently inside
+   * an active (`'T'`) or errored (`'E'`) transaction block.
+   */
+  isInTransaction(): boolean;
+
+  /**
+   * Returns true when the connection is in a failed transaction block
+   * (`'E'` status) that requires a ROLLBACK before further use.
+   */
+  shouldRollback(): boolean;
   getRelatedModelByAlias(alias: any): any;
   setCurrentSetting(name: string, value: any, isLocal?: boolean): Promise<any>;
   setCurrentSettingParametrized(

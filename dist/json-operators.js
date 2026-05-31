@@ -3,7 +3,7 @@ const SQL = require("./sql");
 class JSONBaseOperator {
   constructor(column, path) {
     this.column = column;
-    this.path = Array.isArray(path) ? path : [path];
+    this.path = Array.isArray(path) ? path : path ? [path] : [];
   }
 
   __toPath(path) {
@@ -89,7 +89,7 @@ class JSONUnsetOperator extends JSONBaseOperator {
     const sql = new SQL((args) => {
       const aliasedColumn = this.toAliasedColumn(args);
       return [
-        `${aliasedColumn} ${isArray ? `#-` : `-`} %v:: ${
+        `${aliasedColumn} ${isArray ? `#-` : `-`} %v::${
           isArray ? "text[]" : "text"
         }`,
         [formattedPath],
@@ -353,13 +353,11 @@ class JSONBCompareOperator extends JSONBaseOperator {
       const [path, isArray] = this.__toPath(this.path);
 
       const accessor = isArray ? `#>` : `->`;
-      const formattedPath = isArray ? `%v::text[]` : `'${path}'`;
+      const pathArg = isArray ? `%v::text[]` : `%v`;
 
       return [
-        `${col}${accessor}${formattedPath} ${this.operator} %v`,
-        [isArray ? path : null, JSONSerializer.jsonb(this.value)].filter(
-          Boolean,
-        ),
+        `${col}${accessor}${pathArg} ${this.operator} %v`,
+        [path, JSONSerializer.jsonb(this.value)],
       ];
     });
   }
@@ -378,13 +376,11 @@ class JSONCompareOperator extends JSONBaseOperator {
       const [path, isArray] = this.__toPath(this.path);
 
       const accessor = isArray ? `#>` : `->`;
-      const formattedPath = isArray ? `%v::text[]` : `'${path}'`;
+      const pathArg = isArray ? `%v::text[]` : `%v`;
 
       return [
-        `${col}${accessor}${formattedPath} ${this.operator} %v`,
-        [isArray ? path : null, JSONSerializer.json(this.value)].filter(
-          Boolean,
-        ),
+        `${col}${accessor}${pathArg} ${this.operator} %v`,
+        [path, JSONSerializer.json(this.value)],
       ];
     });
   }
@@ -504,11 +500,37 @@ class JSONBContainedInOperator extends JSONBCompareOperator {
   constructor(column, path, value) {
     super(column, path, value, "<@");
   }
+
+  toSQL() {
+    return new SQL((args) => {
+      const col = this.toAliasedColumn(args);
+      const [path, isArray] = this.__toPath(this.path);
+      const accessor = isArray ? `#>` : `->`;
+      const pathArg = isArray ? `%v::text[]` : `%v`;
+      return [
+        `${col}${accessor}${pathArg} <@ %v::jsonb`,
+        [path, JSONSerializer.jsonb(this.value)],
+      ];
+    });
+  }
 }
 
 class JSONContainedInOperator extends JSONCompareOperator {
   constructor(column, path, value) {
     super(column, path, value, "<@");
+  }
+
+  toSQL() {
+    return new SQL((args) => {
+      const col = this.toAliasedColumn(args);
+      const [path, isArray] = this.__toPath(this.path);
+      const accessor = isArray ? `#>` : `->`;
+      const pathArg = isArray ? `%v::text[]` : `%v`;
+      return [
+        `${col}${accessor}${pathArg} <@ %v::jsonb`,
+        [path, JSONSerializer.jsonb(this.value)],
+      ];
+    });
   }
 }
 

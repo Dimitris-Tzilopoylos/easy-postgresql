@@ -361,7 +361,7 @@ const sqlTypesByDbClient = {
     },
     {
       name: "box",
-      value: "circle",
+      value: "box",
       canBeAutoIncrement: false,
       canBeReferencedInPrimaryKey: false,
       disabledPrimaryKey: false,
@@ -662,8 +662,8 @@ const sqlTypesByDbClient = {
       canHaveDefaultValue: false,
     },
     {
-      name: "geomnetry",
-      value: "geomnetry",
+      name: "geometry",
+      value: "geometry",
       canBeAutoIncrement: false,
       canBeReferencedInPrimaryKey: false,
       disabledPrimaryKey: false,

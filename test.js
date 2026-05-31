@@ -160,13 +160,33 @@
 
 // const b = new Building();
 
-// DBManager.createTable(new Space())
-//   .then((res) => {
-//     console.log(res);
-//   })
-//   .catch((err) => {
-//     console.log(err);
-//   })
-//   .finally(() => {
-//     process.exit(0);
+// // DBManager.createTable(new Space())
+// //   .then((res) => {
+// //     console.log(res);
+// //   })
+// //   .catch((err) => {
+// //     console.log(err);
+// //   })
+// //   .finally(() => {
+// //     process.exit(0);
+// //   });
+
+// const run = async () => {
+//   await b.withTransaction(async (conn) => {
+//     console.log(b.connected);
+//     const s = new Sensor(conn);
+//     console.log(s.connected);
+//     console.log(s.connection.getTransactionStatus());
+//     await s.rollback();
+//     console.log(s.transaction);
+//     console.log(b.transaction);
+//     console.log(s.connected);
+//     console.log(b.connected);
 //   });
+//   console.log("ended");
+//   console.log(b.transaction);
+//   console.log(b.connected);
+//   //   console.log(await b.connection.query(`select 1`));
+// };
+
+// run();

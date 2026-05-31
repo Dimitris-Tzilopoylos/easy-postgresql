@@ -141,7 +141,7 @@ class DBManager {
       if (Array.isArray(column?.checks) && column?.checks?.length) {
         sql += ` CHECK (${column?.checks.join(",")})`;
       } else {
-        ` CHECK (${column?.checks})`;
+        sql += ` CHECK (${column?.checks})`;
       }
     }
     return sql;
