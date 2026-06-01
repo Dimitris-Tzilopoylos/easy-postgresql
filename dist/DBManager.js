@@ -140,8 +140,6 @@ class DBManager {
     if (column?.checks) {
       if (Array.isArray(column?.checks) && column?.checks?.length) {
         sql += ` CHECK (${column?.checks.join(",")})`;
-      } else {
-        sql += ` CHECK (${column?.checks})`;
       }
     }
     return sql;
@@ -627,8 +625,8 @@ class DBManager {
       options?.kind === "restrictive"
         ? "as restrictive"
         : options?.kind === "permissive"
-        ? "as permissive"
-        : "";
+          ? "as permissive"
+          : "";
     const usingClause = using ? ` using ${using}` : "";
     const checkClause = check ? ` with check ${check}` : "";
 
@@ -671,8 +669,8 @@ class DBManager {
       options?.kind === "restrictive"
         ? "as restrictive"
         : options?.kind === "permissive"
-        ? "as permissive"
-        : "";
+          ? "as permissive"
+          : "";
 
     const usingClause = using ? ` using ${using}` : "";
     const checkClause = check ? ` with check ${check}` : "";
@@ -710,8 +708,8 @@ class DBManager {
       options?.kind === "restrictive"
         ? "as restrictive"
         : options?.kind === "permissive"
-        ? "as permissive"
-        : "";
+          ? "as permissive"
+          : "";
 
     const usingClause = using ? ` using ${using}` : "";
 
@@ -755,8 +753,8 @@ class DBManager {
       options?.kind === "restrictive"
         ? "as restrictive"
         : options?.kind === "permissive"
-        ? "as permissive"
-        : "";
+          ? "as permissive"
+          : "";
 
     const usingClause = using ? ` using ${using}` : "";
     const checkClause = check ? ` with check ${check}` : "";
